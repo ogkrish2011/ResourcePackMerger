@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Resource Pack Merger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="minecraft-bg"></div>
+    
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-cube"></i>
+                <h1>ResourceCraft</h1>
+                <span class="subtitle">Pack Merger</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="container">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <h2>Combine Your Minecraft Resource Packs</h2>
+                <p>Upload multiple resource packs, customize your merged pack, and download instantly!</p>
+            </section>
+
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <h3>Drop Resource Packs Here</h3>
+                        <p>Or click to browse files</p>
+                        <button class="browse-btn" id="browseBtn">
+                            <i class="fas fa-folder-open"></i>
+                            Browse Files
+                        </button>
+                        <input type="file" id="fileInput" multiple accept=".zip" hidden>
+                        <div class="file-info">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Supports .zip files • No file size limit</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Size Warning -->
+                <div class="warning-modal" id="sizeWarning" style="display: none;">
+                    <div class="warning-content">
+                        <i class="fas fa-exclamation-triangle warning-icon"></i>
+                        <h4>Large File Warning</h4>
+                        <p>File size is over 75MB. Website might experience slower performance but won't crash.</p>
+                        <div class="warning-buttons">
+                            <button class="btn btn-warning" id="continueBtn">Continue Anyway</button>
+                            <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Uploaded Files Section -->
+            <section class="files-section" id="filesSection" style="display: none;">
+                <h3><i class="fas fa-archive"></i> Uploaded Resource Packs</h3>
+                <div class="files-list" id="filesList"></div>
+            </section>
+
+            <!-- Pack Editor Section -->
+            <section class="editor-section" id="editorSection" style="display: none;">
+                <h3><i class="fas fa-edit"></i> Customize Your Merged Pack</h3>
+                <div class="editor-card">
+                    <div class="editor-grid">
+                        <div class="pack-preview">
+                            <div class="pack-icon-container">
+                                <img id="packIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" alt="Pack Icon">
+                                <div class="icon-overlay">
+                                    <i class="fas fa-camera"></i>
+                                    <span>Change Icon</span>
+                                </div>
+                                <input type="file" id="iconInput" accept="image/*" hidden>
+                            </div>
+                        </div>
+                        <div class="pack-details">
+                            <div class="input-group">
+                                <label for="packName">
+                                    <i class="fas fa-tag"></i>
+                                    Pack Name
+                                </label>
+                                <input type="text" id="packName" value="Merged Resource Pack" placeholder="Enter pack name">
+                            </div>
+                            <div class="input-group">
+                                <label for="packDescription">
+                                    <i class="fas fa-align-left"></i>
+                                    Description
+                                </label>
+                                <textarea id="packDescription" placeholder="Enter pack description" rows="3">A combination of multiple resource packs merged together</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Merge Section -->
+            <section class="merge-section" id="mergeSection" style="display: none;">
+                <div class="merge-card">
+                    <button class="merge-btn" id="mergeBtn">
+                        <i class="fas fa-magic"></i>
+                        Merge & Download
+                    </button>
+                </div>
+            </section>
+
+            <!-- Progress Section -->
+            <section class="progress-section" id="progressSection" style="display: none;">
+                <div class="progress-card">
+                    <h4><i class="fas fa-cogs spinning"></i> Merging Resource Packs...</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Preparing files...</div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 ResourceCraft. Made with <i class="fas fa-heart"></i> for Minecraft lovers</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

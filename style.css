@@ -1,0 +1,740 @@
+/* Minecraft Resource Pack Merger - Aesthetic Styles */
+
+:root {
+    --minecraft-green: #00AA00;
+    --minecraft-dark-green: #008800;
+    --minecraft-blue: #5555FF;
+    --minecraft-dark-blue: #0000AA;
+    --minecraft-brown: #AA5500;
+    --minecraft-dark-brown: #884400;
+    --minecraft-gray: #AAAAAA;
+    --minecraft-dark-gray: #555555;
+    --minecraft-black: #000000;
+    --minecraft-white: #FFFFFF;
+    --warning-color: #FF5555;
+    --success-color: #55FF55;
+    
+    --gradient-primary: linear-gradient(135deg, var(--minecraft-green), var(--minecraft-blue));
+    --gradient-secondary: linear-gradient(135deg, var(--minecraft-brown), var(--minecraft-dark-brown));
+    --shadow-box: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --shadow-text: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: #1a1a1a;
+    color: var(--minecraft-white);
+    line-height: 1.6;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Minecraft Background */
+.minecraft-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        linear-gradient(45deg, rgba(0, 170, 0, 0.1) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(0, 170, 0, 0.1) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(0, 170, 0, 0.1) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(0, 170, 0, 0.1) 75%),
+        linear-gradient(to bottom, #0d1117, #1a1a1a);
+    background-size: 20px 20px, 20px 20px, 20px 20px, 20px 20px, 100% 100%;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px, 0 0;
+    z-index: -1;
+    animation: backgroundFloat 20s ease-in-out infinite;
+}
+
+@keyframes backgroundFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header */
+.header {
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 3px solid var(--minecraft-green);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-box);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px 0;
+}
+
+.logo i {
+    font-size: 2.5rem;
+    color: var(--minecraft-green);
+    text-shadow: var(--shadow-text);
+    animation: cubeRotate 4s ease-in-out infinite;
+}
+
+@keyframes cubeRotate {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(90deg); }
+    50% { transform: rotate(180deg); }
+    75% { transform: rotate(270deg); }
+}
+
+.logo h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+}
+
+.subtitle {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    color: var(--minecraft-gray);
+    font-weight: 400;
+}
+
+/* Main Container */
+.main-container {
+    min-height: calc(100vh - 140px);
+    padding: 40px 0;
+}
+
+/* Welcome Section */
+.welcome-section {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.welcome-section h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3rem;
+    margin-bottom: 20px;
+    text-shadow: var(--shadow-text);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.welcome-section p {
+    font-size: 1.2rem;
+    color: var(--minecraft-gray);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Upload Section */
+.upload-section {
+    margin-bottom: 40px;
+}
+
+.upload-zone {
+    border: 3px dashed var(--minecraft-green);
+    border-radius: 15px;
+    padding: 60px 40px;
+    text-align: center;
+    background: rgba(0, 170, 0, 0.05);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.upload-zone::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.upload-zone:hover {
+    border-color: var(--minecraft-blue);
+    background: rgba(85, 85, 255, 0.1);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-box);
+}
+
+.upload-zone:hover::before {
+    left: 100%;
+}
+
+.upload-zone.dragover {
+    border-color: var(--success-color);
+    background: rgba(85, 255, 85, 0.15);
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    font-size: 4rem;
+    color: var(--minecraft-green);
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.upload-content h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    color: var(--minecraft-white);
+}
+
+.upload-content p {
+    color: var(--minecraft-gray);
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+}
+
+.browse-btn {
+    background: var(--gradient-primary);
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-box);
+    font-family: 'Roboto', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.browse-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 170, 0, 0.4);
+}
+
+.file-info {
+    margin-top: 30px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--minecraft-gray);
+}
+
+/* Warning Modal */
+.warning-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.warning-content {
+    background: rgba(20, 20, 20, 0.95);
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 500px;
+    border: 2px solid var(--warning-color);
+    box-shadow: var(--shadow-box);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.warning-icon {
+    font-size: 3rem;
+    color: var(--warning-color);
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.warning-content h4 {
+    font-family: 'Orbitron', sans-serif;
+    margin-bottom: 15px;
+    color: var(--warning-color);
+    font-size: 1.5rem;
+}
+
+.warning-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+}
+
+.btn-warning {
+    background: var(--warning-color);
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #ff3333;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: var(--minecraft-gray);
+    color: var(--minecraft-black);
+}
+
+.btn-secondary:hover {
+    background: #cccccc;
+    transform: translateY(-2px);
+}
+
+/* Files Section */
+.files-section {
+    margin-bottom: 40px;
+}
+
+.files-section h3 {
+    font-family: 'Orbitron', sans-serif;
+    margin-bottom: 20px;
+    color: var(--minecraft-green);
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.files-list {
+    display: grid;
+    gap: 15px;
+}
+
+.file-item {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--minecraft-dark-gray);
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.file-item:hover {
+    border-color: var(--minecraft-green);
+    background: rgba(0, 170, 0, 0.1);
+    transform: translateX(5px);
+}
+
+.file-info-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+.file-icon {
+    font-size: 2rem;
+    color: var(--minecraft-blue);
+}
+
+.file-details h4 {
+    color: var(--minecraft-white);
+    margin-bottom: 5px;
+}
+
+.file-details p {
+    color: var(--minecraft-gray);
+    font-size: 0.9rem;
+}
+
+.remove-btn {
+    background: var(--warning-color);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.remove-btn:hover {
+    background: #ff3333;
+    transform: scale(1.1);
+}
+
+/* Editor Section */
+.editor-section {
+    margin-bottom: 40px;
+}
+
+.editor-section h3 {
+    font-family: 'Orbitron', sans-serif;
+    margin-bottom: 20px;
+    color: var(--minecraft-blue);
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.editor-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--minecraft-blue);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: var(--shadow-box);
+}
+
+.editor-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+.pack-icon-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border: 3px solid var(--minecraft-gray);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pack-icon-container:hover {
+    border-color: var(--minecraft-green);
+    transform: scale(1.05);
+}
+
+.pack-icon-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.icon-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    color: white;
+}
+
+.pack-icon-container:hover .icon-overlay {
+    opacity: 1;
+}
+
+.icon-overlay i {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+.input-group {
+    margin-bottom: 25px;
+}
+
+.input-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: var(--minecraft-green);
+    font-weight: 500;
+}
+
+.input-group input,
+.input-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--minecraft-dark-gray);
+    border-radius: 8px;
+    color: var(--minecraft-white);
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+    outline: none;
+    border-color: var(--minecraft-green);
+    background: rgba(0, 170, 0, 0.1);
+}
+
+.input-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Merge Section */
+.merge-section {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.merge-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--minecraft-green);
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: var(--shadow-box);
+}
+
+.merge-btn {
+    background: var(--gradient-primary);
+    border: none;
+    padding: 20px 50px;
+    border-radius: 12px;
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-box);
+    font-family: 'Orbitron', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.merge-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 50px rgba(0, 170, 0, 0.5);
+}
+
+.merge-btn:active {
+    transform: translateY(-2px);
+}
+
+/* Progress Section */
+.progress-section {
+    margin-bottom: 40px;
+}
+
+.progress-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--minecraft-blue);
+    border-radius: 15px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: var(--shadow-box);
+}
+
+.progress-card h4 {
+    font-family: 'Orbitron', sans-serif;
+    margin-bottom: 30px;
+    color: var(--minecraft-blue);
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    border: 2px solid var(--minecraft-blue);
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    width: 0%;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-text {
+    color: var(--minecraft-gray);
+    font-size: 1rem;
+}
+
+/* Footer */
+.footer {
+    background: rgba(0, 0, 0, 0.9);
+    border-top: 2px solid var(--minecraft-green);
+    padding: 20px 0;
+    text-align: center;
+}
+
+.footer p {
+    color: var(--minecraft-gray);
+}
+
+.footer i {
+    color: var(--warning-color);
+    animation: heartbeat 2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .logo h1 {
+        font-size: 2rem;
+    }
+    
+    .welcome-section h2 {
+        font-size: 2rem;
+    }
+    
+    .upload-zone {
+        padding: 40px 20px;
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+    }
+    
+    .editor-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .pack-icon-container {
+        margin: 0 auto;
+    }
+    
+    .warning-content {
+        margin: 20px;
+        padding: 30px 20px;
+    }
+    
+    .warning-buttons {
+        flex-direction: column;
+    }
+    
+    .merge-btn {
+        padding: 15px 30px;
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    .logo {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .logo h1 {
+        font-size: 1.5rem;
+    }
+    
+    .welcome-section h2 {
+        font-size: 1.5rem;
+    }
+    
+    .upload-zone {
+        padding: 30px 15px;
+    }
+    
+    .editor-card,
+    .merge-card,
+    .progress-card {
+        padding: 20px;
+    }
+}
