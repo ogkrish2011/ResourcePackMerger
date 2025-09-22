@@ -1,139 +1,596 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft Resource Pack Merger</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Minecraft Resource Pack Combiner — OG Krish</title>
+
+<!-- Simple styles -->
+<style>
+  :root{
+    --bg:#0f1724;
+    --panel:#0b1220;
+    --accent:#7dd3fc;
+    --muted:#9aa4b2;
+    --glass: rgba(255,255,255,0.03);
+    --danger: #ff7a7a;
+  }
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg,#061226 0%, #07142a 100%);
+    color:#e6eef6;
+    padding:20px;
+  }
+  .wrap{
+    max-width:1100px;
+    margin:0 auto;
+  }
+  header{
+    display:flex;
+    gap:16px;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  header h1{margin:0;font-size:20px}
+  header p{margin:0;color:var(--muted);font-size:13px}
+  .panel{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.04);
+    padding:14px;
+    border-radius:10px;
+    box-shadow: 0 4px 24px rgba(2,6,23,0.6);
+    margin-bottom:14px;
+  }
+
+  .row{display:flex;gap:12px;align-items:flex-start;}
+  .col{flex:1;}
+  .sidebar{width:320px;flex:0 0 320px;}
+  input[type="file"]{color:transparent;}
+  .packs-list{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+  .pack-item{
+    display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px;background:var(--glass);
+  }
+  .pack-item img{width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid rgba(255,255,255,0.04)}
+  .pack-meta{flex:1;min-width:0}
+  .pack-meta div{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pack-controls{display:flex;gap:6px;}
+  .btn{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.04);
+    padding:8px 10px;border-radius:8px;color:var(--accent);cursor:pointer;
+    font-weight:600;font-size:13px;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:transparent;color:var(--muted);border:1px dashed rgba(255,255,255,0.03)}
+  .small{font-size:13px;padding:6px 8px}
+  .muted{color:var(--muted);font-size:13px}
+  .files-panel{max-height:460px;overflow:auto;padding:6px;border-radius:8px;background:rgba(255,255,255,0.01);margin-top:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px;text-align:left;border-bottom:1px dashed rgba(255,255,255,0.02)}
+  th{position:sticky;top:0;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);z-index:2}
+  select, input[type="text"], textarea{background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px;border-radius:6px;width:100%}
+  textarea{min-height:60px;resize:vertical}
+  .controls{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .progress-wrap{margin-top:12px}
+  .progress{height:12px;background:rgba(255,255,255,0.03);border-radius:8px;overflow:hidden}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#60a5fa);width:0%}
+  .footer-note{color:var(--muted);font-size:13px;margin-top:8px}
+  .danger{color:var(--danger)}
+  .center{display:flex;align-items:center;justify-content:center}
+  .file-count{color:var(--muted);font-size:13px}
+  .pack-order-controls{display:flex;gap:6px}
+  .pack-order-controls button{padding:6px 8px;border-radius:6px;border:0;background:rgba(255,255,255,0.02);color:var(--muted);cursor:pointer}
+  .pack-order-controls button:hover{color:var(--accent)}
+  .radio-label{display:flex;gap:6px;align-items:center;color:var(--muted)}
+</style>
 </head>
 <body>
-    <div class="minecraft-bg"></div>
-    
-    <header class="header">
-        <div class="container">
-            <div class="logo">
-                <i class="fas fa-cube"></i>
-                <h1>ResourceCraft</h1>
-                <span class="subtitle">Pack Merger</span>
-            </div>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Minecraft Resource Pack Combiner</h1>
+      <p class="muted">Upload multiple resource pack ZIPs, pick which file comes from which pack and download the merged pack. Default description: <strong>Merged by OG Krish's website</strong>.</p>
+    </div>
+  </header>
+
+  <div class="row">
+    <div class="sidebar panel">
+      <label class="muted">Upload resource pack ZIPs (first file becomes base by default)</label>
+      <input id="file-input" type="file" accept=".zip,application/zip" multiple />
+      <div class="packs-list" id="packs-list"></div>
+
+      <div style="margin-top:12px">
+        <div class="muted">Upload custom pack icon (pack.png) — optional</div>
+        <input id="icon-input" type="file" accept="image/png"/>
+        <div id="icon-preview" style="margin-top:8px"></div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="muted">Merged pack editor</div>
+        <input id="merged-name" type="text" placeholder="Pack name (optional)" />
+        <textarea id="merged-desc" placeholder='Description (default: "Merged by OG Krish&#39;s website")'>Merged by OG Krish's website</textarea>
+        <div class="footer-note">When merging, pack.mcmeta pack_format will be taken from the base pack if present, else a reasonable default will be used.</div>
+      </div>
+    </div>
+
+    <div class="col panel" style="min-width:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="muted">Files across packs</div>
+          <div class="file-count" id="file-count">No files loaded</div>
         </div>
-    </header>
-
-    <main class="main-container">
-        <div class="container">
-            <!-- Welcome Section -->
-            <section class="welcome-section">
-                <h2>Combine Your Minecraft Resource Packs</h2>
-                <p>Upload multiple resource packs, customize your merged pack, and download instantly!</p>
-            </section>
-
-            <!-- Upload Section -->
-            <section class="upload-section">
-                <div class="upload-zone" id="uploadZone">
-                    <div class="upload-content">
-                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                        <h3>Drop Resource Packs Here</h3>
-                        <p>Or click to browse files</p>
-                        <button class="browse-btn" id="browseBtn">
-                            <i class="fas fa-folder-open"></i>
-                            Browse Files
-                        </button>
-                        <input type="file" id="fileInput" multiple accept=".zip" hidden>
-                        <div class="file-info">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Supports .zip files • No file size limit</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- File Size Warning -->
-                <div class="warning-modal" id="sizeWarning" style="display: none;">
-                    <div class="warning-content">
-                        <i class="fas fa-exclamation-triangle warning-icon"></i>
-                        <h4>Large File Warning</h4>
-                        <p>File size is over 75MB. Website might experience slower performance but won't crash.</p>
-                        <div class="warning-buttons">
-                            <button class="btn btn-warning" id="continueBtn">Continue Anyway</button>
-                            <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Uploaded Files Section -->
-            <section class="files-section" id="filesSection" style="display: none;">
-                <h3><i class="fas fa-archive"></i> Uploaded Resource Packs</h3>
-                <div class="files-list" id="filesList"></div>
-            </section>
-
-            <!-- Pack Editor Section -->
-            <section class="editor-section" id="editorSection" style="display: none;">
-                <h3><i class="fas fa-edit"></i> Customize Your Merged Pack</h3>
-                <div class="editor-card">
-                    <div class="editor-grid">
-                        <div class="pack-preview">
-                            <div class="pack-icon-container">
-                                <img id="packIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" alt="Pack Icon">
-                                <div class="icon-overlay">
-                                    <i class="fas fa-camera"></i>
-                                    <span>Change Icon</span>
-                                </div>
-                                <input type="file" id="iconInput" accept="image/*" hidden>
-                            </div>
-                        </div>
-                        <div class="pack-details">
-                            <div class="input-group">
-                                <label for="packName">
-                                    <i class="fas fa-tag"></i>
-                                    Pack Name
-                                </label>
-                                <input type="text" id="packName" value="Merged Resource Pack" placeholder="Enter pack name">
-                            </div>
-                            <div class="input-group">
-                                <label for="packDescription">
-                                    <i class="fas fa-align-left"></i>
-                                    Description
-                                </label>
-                                <textarea id="packDescription" placeholder="Enter pack description" rows="3">A combination of multiple resource packs merged together</textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Merge Section -->
-            <section class="merge-section" id="mergeSection" style="display: none;">
-                <div class="merge-card">
-                    <button class="merge-btn" id="mergeBtn">
-                        <i class="fas fa-magic"></i>
-                        Merge & Download
-                    </button>
-                </div>
-            </section>
-
-            <!-- Progress Section -->
-            <section class="progress-section" id="progressSection" style="display: none;">
-                <div class="progress-card">
-                    <h4><i class="fas fa-cogs spinning"></i> Merging Resource Packs...</h4>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="progress-text" id="progressText">Preparing files...</div>
-                </div>
-            </section>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="refresh-btn">Reload files</button>
+          <button class="btn ghost" id="reset-btn">Reset everything</button>
         </div>
-    </main>
+      </div>
 
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 ResourceCraft. Made with <i class="fas fa-heart"></i> for Minecraft lovers</p>
+      <div class="files-panel" id="files-panel">
+        <table id="files-table" aria-hidden="true">
+          <thead>
+            <tr>
+              <th style="width:40%;">Path</th>
+              <th style="width:36%;">Pick source pack (choose where this file comes from)</th>
+              <th style="width:24%;">Preview / Info</th>
+            </tr>
+          </thead>
+          <tbody id="files-tbody"></tbody>
+        </table>
+        <div id="files-empty" class="center" style="padding:40px"><div class="muted">No files to show — upload packs to begin.</div></div>
+      </div>
+
+      <div class="controls">
+        <div style="flex:1">
+          <div class="muted">When you choose a base pack, its pack.mcmeta pack_format will be used when available.</div>
         </div>
-    </footer>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script src="main.js"></script>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn" id="merge-btn">Merge</button>
+          <button class="btn ghost" id="download-btn" disabled>Download merged pack</button>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="muted">Merge progress</div>
+        <div class="progress"><i id="progress-bar" style="width:0%"></i></div>
+        <div class="muted" id="progress-text">Idle</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="margin-top:12px" class="muted">Notes: The first uploaded pack is set as base by default; you can reorder packs and choose per-file which pack to use. The UI reads ZIP contents in the browser — files are not uploaded to any server.</div>
+</div>
+
+<!-- External libs: JSZip and FileSaver -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+<script>
+/*
+  Resource Pack Combiner
+  - Reads uploaded ZIPs using JSZip
+  - Builds a list of unique file paths
+  - Allows selecting for each path which pack to take from
+  - Allows editing merged pack name/description and uploading a custom icon
+  - Merges selected files into a new ZIP and downloads it
+*/
+
+const fileInput = document.getElementById('file-input');
+const packsListEl = document.getElementById('packs-list');
+const filesPanel = document.getElementById('files-panel');
+const filesTable = document.getElementById('files-table');
+const filesTbody = document.getElementById('files-tbody');
+const filesEmpty = document.getElementById('files-empty');
+const fileCountEl = document.getElementById('file-count');
+const mergedNameInput = document.getElementById('merged-name');
+const mergedDescInput = document.getElementById('merged-desc');
+const iconInput = document.getElementById('icon-input');
+const iconPreview = document.getElementById('icon-preview');
+const mergeBtn = document.getElementById('merge-btn');
+const downloadBtn = document.getElementById('download-btn');
+const refreshBtn = document.getElementById('refresh-btn');
+const resetBtn = document.getElementById('reset-btn');
+const progressBar = document.getElementById('progress-bar');
+const progressText = document.getElementById('progress-text');
+
+let packs = []; // {id, filename, file(File), zip(JSZip), entries: Map<path, JSZipObject>, iconBlob?, displayName}
+let pathSet = new Set();
+let pathList = []; // unique sorted list
+let selectionForPath = new Map(); // path -> packId
+let mergedZipBlob = null;
+let customIconBlob = null;
+
+function resetAll(){
+  packs = [];
+  pathSet.clear();
+  pathList = [];
+  selectionForPath.clear();
+  mergedZipBlob = null;
+  customIconBlob = null;
+  packsListEl.innerHTML = '';
+  filesTbody.innerHTML = '';
+  filesEmpty.style.display = '';
+  filesTable.setAttribute('aria-hidden','true');
+  fileCountEl.textContent = 'No files loaded';
+  iconPreview.innerHTML = '';
+  mergedNameInput.value = '';
+  mergedDescInput.value = "Merged by OG Krish's website";
+  downloadBtn.disabled = true;
+  progressBar.style.width = '0%';
+  progressText.textContent = 'Idle';
+  fileInput.value = '';
+  iconInput.value = '';
+}
+resetAll();
+
+function readFileAsArrayBuffer(file){ return new Promise((res,rej)=>{ const r = new FileReader(); r.onload = ()=>res(r.result); r.onerror = rej; r.readAsArrayBuffer(file); }); }
+function readFileAsBlob(file){ return new Promise((res,rej)=>{ const r = new FileReader(); r.onload = ()=>res(new Blob([r.result])); r.onerror = rej; r.readAsArrayBuffer(file); }); }
+function readFileAsDataURL(file){ return new Promise((res,rej)=>{ const r = new FileReader(); r.onload = ()=>res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
+
+fileInput.addEventListener('change', async (e)=>{
+  const files = Array.from(e.target.files || []);
+  if(files.length === 0) return;
+  // Add each file as a pack
+  for(const f of files){
+    // minimal name
+    const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+    const packObj = { id, filename: f.name, file: f, zip: null, entries: new Map(), displayName: f.name, isBase: false, iconBlob: null, mcmeta: null };
+    packs.push(packObj);
+  }
+
+  // mark first pack as base if none selected
+  if(!packs.some(p=>p.isBase)) packs[0].isBase = true;
+  await loadAllPacks();
+  rebuildUI();
+});
+
+iconInput.addEventListener('change', async (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) { customIconBlob = null; iconPreview.innerHTML=''; return; }
+  if(f.type !== 'image/png'){ alert('pack icon must be a PNG (pack.png).'); iconInput.value=''; return; }
+  customIconBlob = f;
+  const d = await readFileAsDataURL(f);
+  iconPreview.innerHTML = `<img src="${d}" style="width:64px;height:64px;border-radius:6px;border:1px solid rgba(255,255,255,0.06)" />`;
+});
+
+async function loadAllPacks(){
+  progressText.textContent = 'Loading packs...';
+  progressBar.style.width = '4%';
+  for(let i=0;i<packs.length;i++){
+    const p = packs[i];
+    if(p.zip) continue; // already loaded
+    try{
+      const arr = await readFileAsArrayBuffer(p.file);
+      const zip = await JSZip.loadAsync(arr);
+      p.zip = zip;
+      // collect entries
+      p.entries = new Map();
+      Object.keys(zip.files).forEach(k=>{
+        const f = zip.files[k];
+        if(!f.dir){
+          // Normalize path: remove leading "./" and backslashes
+          let path = k.replace(/^(\.\/)+/,'').replace(/\\/g,'/');
+          p.entries.set(path, f);
+        }
+      });
+      // try to read pack.png inside this pack (if present)
+      if(p.entries.has('pack.png')){
+        try{
+          const blob = await p.entries.get('pack.png').async('blob');
+          p.iconBlob = blob;
+        }catch(err){
+          console.warn('Could not read pack.png from', p.filename, err);
+        }
+      }
+      // read pack.mcmeta if present
+      if(p.entries.has('pack.mcmeta')){
+        try{
+          const txt = await p.entries.get('pack.mcmeta').async('string');
+          p.mcmeta = JSON.parse(txt);
+        }catch(err){
+          p.mcmeta = null;
+        }
+      }
+      // display name: if mcmeta contains description (string) we can show short, else filename
+      p.displayName = p.filename;
+    }catch(err){
+      console.error('Error reading pack', p.filename, err);
+      alert('Failed to read ZIP '+p.filename+': '+err);
+    }
+    progressBar.style.width = `${4 + Math.round((i+1)/packs.length*40)}%`;
+  }
+  // collect all unique file paths
+  pathSet.clear();
+  for(const p of packs){
+    for(const path of p.entries.keys()) pathSet.add(path);
+  }
+  // Convert to sorted list (with directories like assets/ first)
+  pathList = Array.from(pathSet).sort((a,b)=>{
+    // prefer shorter paths first
+    if(a.length !== b.length) return a.length - b.length;
+    return a.localeCompare(b);
+  });
+  progressBar.style.width = '48%';
+  progressText.textContent = 'Packs loaded';
+  downloadBtn.disabled = true;
+}
+
+function rebuildUI(){
+  // packs list
+  packsListEl.innerHTML = '';
+  for(let idx=0; idx<packs.length; idx++){
+    const p = packs[idx];
+    const el = document.createElement('div');
+    el.className = 'pack-item';
+    el.dataset.id = p.id;
+
+    const iconEl = document.createElement('div');
+    if(p.iconBlob){
+      const url = URL.createObjectURL(p.iconBlob);
+      iconEl.innerHTML = `<img src="${url}" alt="icon">`;
+    } else {
+      iconEl.innerHTML = `<img src="data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect rx='6' width='100%' height='100%' fill='%230a1a2a'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='11' fill='%237dd3fc' font-family='Arial'>PACK</text></svg>`) }" />`;
+    }
+
+    const meta = document.createElement('div');
+    meta.className = 'pack-meta';
+    const nameLine = document.createElement('div');
+    nameLine.textContent = p.displayName;
+    const fileLine = document.createElement('div');
+    fileLine.className = 'muted';
+    fileLine.textContent = p.filename;
+    meta.appendChild(nameLine);
+    meta.appendChild(fileLine);
+
+    const controls = document.createElement('div');
+    controls.className = 'pack-controls';
+    controls.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label class="radio-label"><input type="radio" name="base-radio" ${p.isBase ? 'checked' : ''} style="accent-color:var(--accent)" /> base</label>
+        <div class="pack-order-controls">
+          <button title="move up" data-action="up">▲</button>
+          <button title="move down" data-action="down">▼</button>
+          <button title="remove pack" data-action="remove" style="color:var(--danger)">✕</button>
+        </div>
+      </div>
+    `;
+    el.appendChild(iconEl);
+    el.appendChild(meta);
+    el.appendChild(controls);
+    packsListEl.appendChild(el);
+
+    controls.querySelector('[data-action="up"]').addEventListener('click', ()=>{ if(idx>0){ packs.splice(idx,1); packs.splice(idx-1,0,p); rebuildUI(); rebuildFilesSelection(); }});
+    controls.querySelector('[data-action="down"]').addEventListener('click', ()=>{ if(idx<packs.length-1){ packs.splice(idx,1); packs.splice(idx+1,0,p); rebuildUI(); rebuildFilesSelection(); }});
+    controls.querySelector('[data-action="remove"]').addEventListener('click', ()=>{ if(!confirm('Remove this pack from the list?')) return; packs.splice(idx,1); if(packs.length>0 && !packs.some(x=>x.isBase)) packs[0].isBase=true; rebuildUI(); rebuildFilesSelection(); });
+    controls.querySelector('input[type="radio"]').addEventListener('change', ()=>{
+      packs.forEach(x=>x.isBase=false);
+      p.isBase = true;
+      rebuildFilesSelection();
+    });
+  }
+
+  // build files table
+  if(pathList.length === 0){
+    filesEmpty.style.display = '';
+    filesTable.setAttribute('aria-hidden','true');
+    fileCountEl.textContent = 'No files loaded';
+    filesTbody.innerHTML = '';
+  }else{
+    filesEmpty.style.display = 'none';
+    filesTable.removeAttribute('aria-hidden');
+    fileCountEl.textContent = `${pathList.length} unique files across ${packs.length} pack(s)`;
+    filesTbody.innerHTML = '';
+    for(const path of pathList){
+      const tr = document.createElement('tr');
+      const tdPath = document.createElement('td');
+      tdPath.textContent = path;
+      const tdSelect = document.createElement('td');
+      // create select with options per pack and "None" (skip)
+      const sel = document.createElement('select');
+      sel.dataset.path = path;
+      const noneOpt = document.createElement('option');
+      noneOpt.value = '__none';
+      noneOpt.textContent = '(skip / omit file)';
+      sel.appendChild(noneOpt);
+      for(const p of packs){
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.filename + (p.entries.has(path) ? ' ✓' : ' (missing)');
+        sel.appendChild(opt);
+      }
+      // set default selection: base pack if it contains path, else first pack that contains path
+      const base = packs.find(x=>x.isBase);
+      let defaultSel = '__none';
+      if(base && base.entries.has(path)) defaultSel = base.id;
+      else {
+        for(const p of packs){ if(p.entries.has(path)){ defaultSel = p.id; break; } }
+      }
+      sel.value = defaultSel;
+      selectionForPath.set(path, defaultSel);
+
+      sel.addEventListener('change', (ev)=>{ selectionForPath.set(path, ev.target.value); });
+
+      tdSelect.appendChild(sel);
+
+      const tdInfo = document.createElement('td');
+      tdInfo.className = 'muted';
+      // show which packs include it
+      const included = packs.filter(p=>p.entries.has(path)).map(p=>p.filename);
+      tdInfo.textContent = included.length ? `Present in: ${included.join(', ')}` : 'Not present in any pack (should not happen)';
+      tr.appendChild(tdPath);
+      tr.appendChild(tdSelect);
+      tr.appendChild(tdInfo);
+      filesTbody.appendChild(tr);
+    }
+  }
+}
+
+function rebuildFilesSelection(){
+  // when packs reorder or base changes, we want to update selects default where appropriate but keep user choices if possible
+  // We'll update the option text and keep selection where valid; if previously selected pack removed, try base or first available.
+  const selects = filesTbody.querySelectorAll('select');
+  selects.forEach(sel=>{
+    const path = sel.dataset.path;
+    const prev = sel.value;
+    const currentVal = selectionForPath.get(path) || '__none';
+    // rebuild options
+    sel.innerHTML = '';
+    const noneOpt = document.createElement('option'); noneOpt.value='__none'; noneOpt.textContent='(skip / omit file)'; sel.appendChild(noneOpt);
+    for(const p of packs){
+      const opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.filename + (p.entries.has(path) ? ' ✓' : ' (missing)'); sel.appendChild(opt);
+    }
+    // choose value: if prev still present, keep it; else if base contains path pick base; else first that contains; else none
+    let newVal = '__none';
+    if(packs.some(p=>p.id === prev)) newVal = prev;
+    else{
+      const base = packs.find(x=>x.isBase);
+      if(base && base.entries.has(path)) newVal = base.id;
+      else{
+        const firstHas = packs.find(p=>p.entries.has(path));
+        newVal = firstHas ? firstHas.id : '__none';
+      }
+    }
+    sel.value = newVal;
+    selectionForPath.set(path, newVal);
+    // attach change
+    sel.onchange = (e)=> selectionForPath.set(path, e.target.value);
+  });
+
+  // update packs list UI
+  packsListEl.childNodes.forEach((el, idx)=>{
+    const id = el.dataset.id;
+    const pack = packs.find(p=>p.id===id);
+    if(pack){
+      const radio = el.querySelector('input[type="radio"]');
+      radio.checked = pack.isBase;
+    }
+  });
+
+  fileCountEl.textContent = `${pathList.length} unique files across ${packs.length} pack(s)`;
+}
+
+/* Merge process:
+   - Build new JSZip
+   - For each path in pathList:
+       - get selectionForPath[path] => packId or '__none'
+       - if __none -> skip
+       - if pack has entry for path -> fetch binary and add to outZip
+       - else -> skip (file missing); warn in console
+   - Add pack.mcmeta generated from mergedName & mergedDesc and pack_format from base if present else default 6
+   - Add pack.png from customIconBlob if provided; else prefer base pack's pack.png if that pack has one
+   - Generate zip blob and enable download
+*/
+async function doMerge(){
+  if(packs.length === 0){ alert('No packs loaded'); return; }
+  progressText.textContent = 'Preparing merge...';
+  progressBar.style.width = '2%';
+  mergeBtn.disabled = true;
+  downloadBtn.disabled = true;
+
+  const outZip = new JSZip();
+  const totalPaths = pathList.length;
+  let processed = 0;
+  let addedCount = 0;
+  const warnings = [];
+
+  // Determine pack_format default: use base's pack.mcmeta.pack.pack_format if present
+  let pack_format = 6; // a reasonable default (Minecraft 1.16-1.19 vary; 6 is typical for modern)
+  const base = packs.find(p=>p.isBase);
+  if(base && base.mcmeta && base.mcmeta.pack && typeof base.mcmeta.pack.pack_format === 'number') pack_format = base.mcmeta.pack.pack_format;
+
+  for(const path of pathList){
+    processed++;
+    const selId = selectionForPath.get(path) || '__none';
+    if(selId === '__none'){ updateProgress(processed/totalPaths, `Skipping ${path}`); continue; }
+    const sourcePack = packs.find(p=>p.id === selId);
+    if(!sourcePack){ warnings.push(`Selected pack not found for ${path}`); updateProgress(processed/totalPaths); continue; }
+    if(!sourcePack.entries.has(path)){ warnings.push(`Pack "${sourcePack.filename}" does not contain ${path}`); updateProgress(processed/totalPaths); continue; }
+    try{
+      const entry = sourcePack.entries.get(path);
+      // read as uint8array to preserve binary
+      const data = await entry.async('uint8array');
+      outZip.file(path, data);
+      addedCount++;
+    }catch(err){
+      console.warn('Failed to add', path, 'from', sourcePack.filename, err);
+      warnings.push(`Failed to add ${path} from ${sourcePack.filename}: ${err}`);
+    }
+    updateProgress(processed/totalPaths, `Added ${path} from ${sourcePack.filename}`);
+  }
+
+  // add pack.mcmeta
+  const nameVal = mergedNameInput.value.trim() || (base && base.filename) || 'Merged Resource Pack';
+  const descVal = mergedDescInput.value || "Merged by OG Krish's website";
+  const mcmetaObj = { pack: { pack_format: pack_format, description: descVal } };
+  outZip.file('pack.mcmeta', JSON.stringify(mcmetaObj, null, 2));
+  // add pack.png (custom icon if provided else base's pack.png if present else none)
+  if(customIconBlob){
+    outZip.file('pack.png', customIconBlob);
+  }else if(base && base.iconBlob){
+    outZip.file('pack.png', base.iconBlob);
+  }
+  // finalize zip
+  progressText.textContent = 'Generating merged ZIP...';
+  progressBar.style.width = '92%';
+  try{
+    const blob = await outZip.generateAsync({type:'blob'}, (meta)=> {
+      // meta.percent goes 0-100
+      progressBar.style.width = `${92 + Math.round(meta.percent*0.08)}%`;
+    });
+    mergedZipBlob = blob;
+    const suggestedName = nameVal.replace(/[\\\/:*?"<>|]+/g,'_').slice(0,120) || 'merged-pack';
+    mergedZipBlob.name = suggestedName + '.zip';
+    downloadBtn.disabled = false;
+    progressBar.style.width = '100%';
+    progressText.textContent = `Done — ${addedCount} files added, ${warnings.length} warnings`;
+    if(warnings.length) console.warn('Merge warnings', warnings);
+  }catch(err){
+    progressText.textContent = 'Failed to generate ZIP: ' + err;
+    progressBar.style.width = '4%';
+    console.error(err);
+    alert('Failed to generate merged zip: ' + err);
+  }finally{
+    mergeBtn.disabled = false;
+  }
+}
+
+function updateProgress(fraction, status){
+  const pct = Math.round(Math.min(1,Math.max(0,fraction)) * 90); // map to 0-90 range for main file loop
+  progressBar.style.width = `${2 + pct}%`;
+  progressText.textContent = status ? status : `${Math.round(fraction*100)}%`;
+}
+
+mergeBtn.addEventListener('click', async ()=>{
+  if(packs.length === 0){ alert('No packs loaded'); return; }
+  if(!confirm('Start merge? This will read all selected files from the chosen packs and build a merged ZIP in your browser.')) return;
+  await doMerge();
+});
+
+downloadBtn.addEventListener('click', ()=>{
+  if(!mergedZipBlob){ alert('No merged pack ready — click Merge first.'); return; }
+  const filename = (mergedZipBlob.name || 'merged-pack.zip');
+  saveAs(mergedZipBlob, filename);
+});
+
+refreshBtn.addEventListener('click', async ()=>{
+  // reload zip entries from file objects (useful after reorder)
+  // Clear zip caches for all packs so they will be reloaded on demand
+  packs.forEach(p=>{ p.zip = null; p.entries = new Map(); p.mcmeta = null; p.iconBlob = null; });
+  await loadAllPacks();
+  rebuildUI();
+});
+
+resetBtn.addEventListener('click', ()=>{
+  if(!confirm('Clear all packs and settings?')) return;
+  resetAll();
+});
+
+// initial small helper: if user opens page and programmatically wants to set defaults
+window.addEventListener('beforeunload', (e)=>{ /* allow navigation */ });
+
+</script>
 </body>
 </html>
