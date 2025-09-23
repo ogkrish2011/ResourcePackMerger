@@ -1,596 +1,936 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Minecraft Resource Pack Combiner — OG Krish</title>
-
-<!-- Simple styles -->
-<style>
-  :root{
-    --bg:#0f1724;
-    --panel:#0b1220;
-    --accent:#7dd3fc;
-    --muted:#9aa4b2;
-    --glass: rgba(255,255,255,0.03);
-    --danger: #ff7a7a;
-  }
-  html,body{height:100%;}
-  body{
-    margin:0;
-    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    background: linear-gradient(180deg,#061226 0%, #07142a 100%);
-    color:#e6eef6;
-    padding:20px;
-  }
-  .wrap{
-    max-width:1100px;
-    margin:0 auto;
-  }
-  header{
-    display:flex;
-    gap:16px;
-    align-items:center;
-    margin-bottom:18px;
-  }
-  header h1{margin:0;font-size:20px}
-  header p{margin:0;color:var(--muted);font-size:13px}
-  .panel{
-    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    border:1px solid rgba(255,255,255,0.04);
-    padding:14px;
-    border-radius:10px;
-    box-shadow: 0 4px 24px rgba(2,6,23,0.6);
-    margin-bottom:14px;
-  }
-
-  .row{display:flex;gap:12px;align-items:flex-start;}
-  .col{flex:1;}
-  .sidebar{width:320px;flex:0 0 320px;}
-  input[type="file"]{color:transparent;}
-  .packs-list{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
-  .pack-item{
-    display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px;background:var(--glass);
-  }
-  .pack-item img{width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid rgba(255,255,255,0.04)}
-  .pack-meta{flex:1;min-width:0}
-  .pack-meta div{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .pack-controls{display:flex;gap:6px;}
-  .btn{
-    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    border:1px solid rgba(255,255,255,0.04);
-    padding:8px 10px;border-radius:8px;color:var(--accent);cursor:pointer;
-    font-weight:600;font-size:13px;
-  }
-  .btn:active{transform:translateY(1px)}
-  .btn.ghost{background:transparent;color:var(--muted);border:1px dashed rgba(255,255,255,0.03)}
-  .small{font-size:13px;padding:6px 8px}
-  .muted{color:var(--muted);font-size:13px}
-  .files-panel{max-height:460px;overflow:auto;padding:6px;border-radius:8px;background:rgba(255,255,255,0.01);margin-top:12px}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{padding:8px;text-align:left;border-bottom:1px dashed rgba(255,255,255,0.02)}
-  th{position:sticky;top:0;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);z-index:2}
-  select, input[type="text"], textarea{background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px;border-radius:6px;width:100%}
-  textarea{min-height:60px;resize:vertical}
-  .controls{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
-  .progress-wrap{margin-top:12px}
-  .progress{height:12px;background:rgba(255,255,255,0.03);border-radius:8px;overflow:hidden}
-  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#60a5fa);width:0%}
-  .footer-note{color:var(--muted);font-size:13px;margin-top:8px}
-  .danger{color:var(--danger)}
-  .center{display:flex;align-items:center;justify-content:center}
-  .file-count{color:var(--muted);font-size:13px}
-  .pack-order-controls{display:flex;gap:6px}
-  .pack-order-controls button{padding:6px 8px;border-radius:6px;border:0;background:rgba(255,255,255,0.02);color:var(--muted);cursor:pointer}
-  .pack-order-controls button:hover{color:var(--accent)}
-  .radio-label{display:flex;gap:6px;align-items:center;color:var(--muted)}
-</style>
+  <meta charset="utf-8" />
+  <title>Minecraft Resource Pack Combiner — Canva Code</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- JSZip (for handling zip files client-side) -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <style>
+    /* Smooth scrolling for better UX */
+    html { scroll-behavior: smooth; }
+    /* Hide default file input, we’ll use a styled button */
+    input[type="file"].hidden-input { position: absolute; left: -9999px; }
+    /* Simple drag-over style */
+    .drop-over { outline: 2px dashed rgba(255,255,255,0.5); outline-offset: 8px; }
+    /* Make the file table horizontally scrollable on small screens */
+    .file-table-wrap { overflow: hidden; }
+    .file-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* Sticky first column for better readability on wide lists */
+    .sticky-col { position: sticky; left: 0; z-index: 10; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(6px); }
+    /* Custom thin scrollbar for large lists */
+    .file-table-scroll::-webkit-scrollbar { height: 10px; }
+    .file-table-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 9999px; }
+  </style>
 </head>
-<body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>Minecraft Resource Pack Combiner</h1>
-      <p class="muted">Upload multiple resource pack ZIPs, pick which file comes from which pack and download the merged pack. Default description: <strong>Merged by OG Krish's website</strong>.</p>
+<body class="min-h-screen bg-gradient-to-br from-emerald-900 via-slate-900 to-indigo-900 text-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center ring-1 ring-emerald-400/30">
+            <!-- Pickaxe-like SVG -->
+            <svg viewBox="0 0 24 24" class="w-6 h-6 text-emerald-300" fill="currentColor" aria-hidden="true">
+              <path d="M14.5 4.5 20 10l-2 2-5.5-5.5 2-2zm-2.793 3.207L5.207 14.207a1 1 0 0 0-.293.707V19a1 1 0 0 0 1 1h4.086a1 1 0 0 0 .707-.293l6.5-6.5-5.5-5.5z"></path>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Minecraft Resource Pack Combiner</h1>
+            <p class="text-sm text-emerald-200/80">Upload packs, pick sources, set name/icon, merge, and download. Default description: “merged by og krish's webisite”.</p>
+          </div>
+        </div>
+        <a href="#merge" class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 px-4 py-2 font-semibold transition">
+          Go to Merge
+          <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" aria-hidden="true"><path d="M13 5l7 7-7 7M5 12h14"></path></svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- Steps -->
+    <ol class="grid lg:grid-cols-5 md:grid-cols-3 grid-cols-1 gap-4 mb-8">
+      <li class="rounded-xl bg-white/5 ring-1 ring-white/10 p-4">
+        <p class="text-xs uppercase tracking-wider text-emerald-300 mb-1">Step 1</p>
+        <p class="font-semibold">Upload packs</p>
+      </li>
+      <li class="rounded-xl bg-white/5 ring-1 ring-white/10 p-4">
+        <p class="text-xs uppercase tracking-wider text-emerald-300 mb-1">Step 2</p>
+        <p class="font-semibold">Arrange base & layers</p>
+      </li>
+      <li class="rounded-xl bg-white/5 ring-1 ring-white/10 p-4">
+        <p class="text-xs uppercase tracking-wider text-emerald-300 mb-1">Step 3</p>
+        <p class="font-semibold">Choose per-file sources</p>
+      </li>
+      <li class="rounded-xl bg-white/5 ring-1 ring-white/10 p-4">
+        <p class="text-xs uppercase tracking-wider text-emerald-300 mb-1">Step 4</p>
+        <p class="font-semibold">Edit name, icon, description</p>
+      </li>
+      <li class="rounded-xl bg-white/5 ring-1 ring-white/10 p-4">
+        <p class="text-xs uppercase tracking-wider text-emerald-300 mb-1">Step 5</p>
+        <p class="font-semibold">Merge & download</p>
+      </li>
+    </ol>
+
+    <!-- Upload + Layers + Editor -->
+    <section class="grid lg:grid-cols-12 gap-6">
+      <!-- Left: Upload + Layers -->
+      <div class="lg:col-span-4 space-y-6">
+        <!-- Upload -->
+        <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5">
+          <h2 class="text-lg font-semibold mb-3">Upload Resource Packs (.zip)</h2>
+          <p class="text-sm text-white/70 mb-4">The first uploaded pack becomes the Base. You can reorder to set Base and Layer 1, 2, etc.</p>
+
+          <div id="dropZone" class="group relative rounded-xl border border-dashed border-white/20 bg-white/5 p-5 text-center hover:border-emerald-300/40 transition">
+            <input id="fileInput" class="hidden-input" type="file" accept=".zip" multiple />
+            <div class="flex flex-col items-center gap-2">
+              <div class="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-300 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" class="w-7 h-7" fill="currentColor" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16"></path></svg>
+              </div>
+              <div>
+                <button id="browseBtn" class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 px-4 py-2 font-semibold transition">Browse .zip files</button>
+              </div>
+              <p class="text-xs text-white/60">or drag & drop here</p>
+            </div>
+          </div>
+
+          <div id="uploadNotice" class="hidden mt-3 text-sm text-rose-300"></div>
+        </div>
+
+        <!-- Layers -->
+        <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Base & Layers</h2>
+            <button id="clearAllBtn" class="text-sm text-rose-300 hover:text-rose-200 underline underline-offset-2">Clear all</button>
+          </div>
+
+          <div id="layersList" class="space-y-3">
+            <!-- Packs will appear here -->
+          </div>
+
+          <p class="mt-3 text-xs text-white/60">Tip: Higher layers override lower ones by default. You can also pick exact sources per file.</p>
+        </div>
+      </div>
+
+      <!-- Right: File chooser + Editor -->
+      <div class="lg:col-span-8 space-y-6">
+        <!-- File chooser -->
+        <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+            <h2 class="text-lg font-semibold">Choose Sources Per File</h2>
+            <div class="flex items-center gap-2">
+              <input id="searchInput" type="text" placeholder="Search file path..." class="w-56 px-3 py-2 rounded-lg bg-white/10 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/60" />
+              <button id="resetByOrderBtn" class="rounded-lg bg-slate-700/60 hover:bg-slate-700 px-3 py-2 text-sm">Auto-pick by order</button>
+            </div>
+          </div>
+
+          <div class="file-table-wrap">
+            <div class="file-table-scroll" id="fileTableScroll">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr id="fileTableHeadRow" class="text-left text-white/70 border-b border-white/10">
+                    <!-- Headers injected -->
+                  </tr>
+                </thead>
+                <tbody id="fileTableBody">
+                  <tr><td class="py-6 text-white/60">Upload packs to see files here.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="fileTableFooter" class="mt-3 flex items-center justify-between hidden">
+            <p id="fileCountText" class="text-xs text-white/60"></p>
+            <div class="flex items-center gap-2">
+              <button id="loadMoreBtn" class="hidden rounded-lg bg-slate-700/60 hover:bg-slate-700 px-3 py-1.5 text-xs">Load more</button>
+              <button id="backToTopBtn" class="rounded-lg bg-slate-700/60 hover:bg-slate-700 px-3 py-1.5 text-xs">Back to top</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Editor -->
+        <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5" id="editor">
+          <h2 class="text-lg font-semibold mb-3">Merged Pack Editor</h2>
+          <form id="editorForm" class="grid md:grid-cols-2 gap-5" autocomplete="off">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm mb-1">Pack Name</label>
+                <input id="packName" type="text" class="w-full px-3 py-2 rounded-lg bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60" placeholder="Merged Pack" />
+                <p class="text-xs text-white/60 mt-1">Used as the download filename.</p>
+              </div>
+              <div>
+                <label class="block text-sm mb-1">Description</label>
+                <textarea id="packDesc" rows="3" class="w-full px-3 py-2 rounded-lg bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60" placeholder="merged by og krish's webisite"></textarea>
+                <p class="text-xs text-white/60 mt-1">This goes inside pack.mcmeta.</p>
+              </div>
+              <div>
+                <label class="block text-sm mb-1">Pack Format</label>
+                <select id="packFormat" class="w-full px-3 py-2 rounded-lg bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60">
+                  <option value="15" selected>15 (Minecraft 1.21+)</option>
+                  <option value="13">13 (Minecraft 1.20.x)</option>
+                  <option value="12">12 (Minecraft 1.19.3–1.19.4)</option>
+                  <option value="9">9 (Minecraft 1.19–1.19.2)</option>
+                  <option value="8">8 (Minecraft 1.18.x)</option>
+                  <option value="7">7 (Minecraft 1.17.x)</option>
+                  <option value="6">6 (Minecraft 1.16.2–1.16.5)</option>
+                </select>
+                <p class="text-xs text-white/60 mt-1">If unsure, leave as is.</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm mb-1">Pack Icon (pack.png)</label>
+                <div class="flex items-center gap-4">
+                  <div id="iconPreview" class="h-20 w-20 rounded-lg ring-1 ring-white/10 bg-white/10 flex items-center justify-center text-white/60">
+                    <!-- Placeholder SVG -->
+                    <svg viewBox="0 0 24 24" class="w-8 h-8" fill="currentColor" aria-hidden="true">
+                      <path d="M12 3l9 4.5v9L12 21 3 16.5v-9L12 3zm0 2.236L5 8.118v7.764L12 18.764l7-2.882V8.118L12 5.236z"></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex gap-2">
+                      <input id="iconFileInput" type="file" accept="image/png" class="hidden-input" />
+                      <button id="iconUploadBtn" type="button" class="rounded-lg bg-slate-700/60 hover:bg-slate-700 px-3 py-2 text-sm">Upload PNG</button>
+                      <select id="iconSourceSelect" class="rounded-lg bg-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400/60">
+                        <option value="custom" selected>Use uploaded icon</option>
+                        <option value="none">No icon</option>
+                      </select>
+                    </div>
+                    <p class="text-xs text-white/60 mt-1">Or pick icon from a pack below if available.</p>
+                  </div>
+                </div>
+                <div class="mt-2" id="iconPackRow" class="hidden"></div>
+              </div>
+              <div class="rounded-lg bg-emerald-500/10 text-emerald-200 p-3 text-sm">
+                Default description set to: “merged by og krish's webisite”. You can edit it anytime.
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Merge -->
+        <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5" id="merge">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+            <h2 class="text-lg font-semibold">Merge & Download</h2>
+            <div class="flex items-center gap-2">
+              <button id="mergeBtn" class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed" disabled>
+                <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" aria-hidden="true"><path d="M12 4v7H5v2h7v7h2v-7h7v-2h-7V4z"/></svg>
+                Merge
+              </button>
+              <a id="downloadBtn" class="inline-flex items-center gap-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-indigo-950 px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed pointer-events-none" download>
+                <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" aria-hidden="true"><path d="M12 3v12l4-4h-3V3h-2v8H8l4 4zM5 19h14v2H5z"/></svg>
+                Download
+              </a>
+            </div>
+          </div>
+
+          <div id="progressWrap" class="hidden">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm text-white/80">Merging...</span>
+              <span id="progressText" class="text-sm text-white/60">0%</span>
+            </div>
+            <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+              <div id="progressBar" class="h-3 bg-emerald-400 rounded-full transition-all" style="width:0%"></div>
+            </div>
+            <p id="progressDetail" class="mt-2 text-xs text-white/60"></p>
+          </div>
+
+          <div id="mergeNote" class="text-xs text-white/60 mt-3">
+            After merging, your download will be ready instantly. Everything happens on your device.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 hidden">
+      <div class="rounded-lg bg-black/70 text-white px-4 py-2 text-sm ring-1 ring-white/10 shadow-lg"></div>
     </div>
-  </header>
 
-  <div class="row">
-    <div class="sidebar panel">
-      <label class="muted">Upload resource pack ZIPs (first file becomes base by default)</label>
-      <input id="file-input" type="file" accept=".zip,application/zip" multiple />
-      <div class="packs-list" id="packs-list"></div>
-
-      <div style="margin-top:12px">
-        <div class="muted">Upload custom pack icon (pack.png) — optional</div>
-        <input id="icon-input" type="file" accept="image/png"/>
-        <div id="icon-preview" style="margin-top:8px"></div>
-      </div>
-
-      <div style="margin-top:12px">
-        <div class="muted">Merged pack editor</div>
-        <input id="merged-name" type="text" placeholder="Pack name (optional)" />
-        <textarea id="merged-desc" placeholder='Description (default: "Merged by OG Krish&#39;s website")'>Merged by OG Krish's website</textarea>
-        <div class="footer-note">When merging, pack.mcmeta pack_format will be taken from the base pack if present, else a reasonable default will be used.</div>
-      </div>
-    </div>
-
-    <div class="col panel" style="min-width:0;">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div class="muted">Files across packs</div>
-          <div class="file-count" id="file-count">No files loaded</div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn" id="refresh-btn">Reload files</button>
-          <button class="btn ghost" id="reset-btn">Reset everything</button>
-        </div>
-      </div>
-
-      <div class="files-panel" id="files-panel">
-        <table id="files-table" aria-hidden="true">
-          <thead>
-            <tr>
-              <th style="width:40%;">Path</th>
-              <th style="width:36%;">Pick source pack (choose where this file comes from)</th>
-              <th style="width:24%;">Preview / Info</th>
-            </tr>
-          </thead>
-          <tbody id="files-tbody"></tbody>
-        </table>
-        <div id="files-empty" class="center" style="padding:40px"><div class="muted">No files to show — upload packs to begin.</div></div>
-      </div>
-
-      <div class="controls">
-        <div style="flex:1">
-          <div class="muted">When you choose a base pack, its pack.mcmeta pack_format will be used when available.</div>
-        </div>
-
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn" id="merge-btn">Merge</button>
-          <button class="btn ghost" id="download-btn" disabled>Download merged pack</button>
-        </div>
-      </div>
-
-      <div class="progress-wrap">
-        <div class="muted">Merge progress</div>
-        <div class="progress"><i id="progress-bar" style="width:0%"></i></div>
-        <div class="muted" id="progress-text">Idle</div>
-      </div>
-
-    </div>
+    <!-- Footer -->
+    <footer class="mt-12 text-center text-xs text-white/50">
+      Built by Canva Code. This Canva Code works fully in your browser. No files are uploaded anywhere.
+    </footer>
   </div>
 
-  <div style="margin-top:12px" class="muted">Notes: The first uploaded pack is set as base by default; you can reorder packs and choose per-file which pack to use. The UI reads ZIP contents in the browser — files are not uploaded to any server.</div>
-</div>
+  <script>
+    // ------- State -------
+    const state = {
+      packs: [], // [{id, name, file, zip, files: Set(paths), hasIcon, iconPath, iconData?, orderIndex}]
+      selection: new Map(), // path -> packId
+      allPaths: [], // union of file paths (excl. pack.mcmeta, pack.png)
+      filteredPaths: [],
+      renderLimit: 200,
+      userIcon: null, // {dataUrl, bytes}
+      iconSource: 'custom', // 'custom' | 'none' | packId
+      outZipBlobUrl: null,
+    };
 
-<!-- External libs: JSZip and FileSaver -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    // ------- Elements -------
+    const fileInput = document.getElementById('fileInput');
+    const browseBtn = document.getElementById('browseBtn');
+    const dropZone = document.getElementById('dropZone');
+    const uploadNotice = document.getElementById('uploadNotice');
 
-<script>
-/*
-  Resource Pack Combiner
-  - Reads uploaded ZIPs using JSZip
-  - Builds a list of unique file paths
-  - Allows selecting for each path which pack to take from
-  - Allows editing merged pack name/description and uploading a custom icon
-  - Merges selected files into a new ZIP and downloads it
-*/
+    const layersList = document.getElementById('layersList');
+    const clearAllBtn = document.getElementById('clearAllBtn');
 
-const fileInput = document.getElementById('file-input');
-const packsListEl = document.getElementById('packs-list');
-const filesPanel = document.getElementById('files-panel');
-const filesTable = document.getElementById('files-table');
-const filesTbody = document.getElementById('files-tbody');
-const filesEmpty = document.getElementById('files-empty');
-const fileCountEl = document.getElementById('file-count');
-const mergedNameInput = document.getElementById('merged-name');
-const mergedDescInput = document.getElementById('merged-desc');
-const iconInput = document.getElementById('icon-input');
-const iconPreview = document.getElementById('icon-preview');
-const mergeBtn = document.getElementById('merge-btn');
-const downloadBtn = document.getElementById('download-btn');
-const refreshBtn = document.getElementById('refresh-btn');
-const resetBtn = document.getElementById('reset-btn');
-const progressBar = document.getElementById('progress-bar');
-const progressText = document.getElementById('progress-text');
+    const searchInput = document.getElementById('searchInput');
+    const fileTableHeadRow = document.getElementById('fileTableHeadRow');
+    const fileTableBody = document.getElementById('fileTableBody');
+    const fileTableFooter = document.getElementById('fileTableFooter');
+    const fileCountText = document.getElementById('fileCountText');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const backToTopBtn = document.getElementById('backToTopBtn');
+    const fileTableScroll = document.getElementById('fileTableScroll');
 
-let packs = []; // {id, filename, file(File), zip(JSZip), entries: Map<path, JSZipObject>, iconBlob?, displayName}
-let pathSet = new Set();
-let pathList = []; // unique sorted list
-let selectionForPath = new Map(); // path -> packId
-let mergedZipBlob = null;
-let customIconBlob = null;
+    const packName = document.getElementById('packName');
+    const packDesc = document.getElementById('packDesc');
+    const packFormat = document.getElementById('packFormat');
+    const editorForm = document.getElementById('editorForm');
 
-function resetAll(){
-  packs = [];
-  pathSet.clear();
-  pathList = [];
-  selectionForPath.clear();
-  mergedZipBlob = null;
-  customIconBlob = null;
-  packsListEl.innerHTML = '';
-  filesTbody.innerHTML = '';
-  filesEmpty.style.display = '';
-  filesTable.setAttribute('aria-hidden','true');
-  fileCountEl.textContent = 'No files loaded';
-  iconPreview.innerHTML = '';
-  mergedNameInput.value = '';
-  mergedDescInput.value = "Merged by OG Krish's website";
-  downloadBtn.disabled = true;
-  progressBar.style.width = '0%';
-  progressText.textContent = 'Idle';
-  fileInput.value = '';
-  iconInput.value = '';
-}
-resetAll();
+    const iconPreview = document.getElementById('iconPreview');
+    const iconUploadBtn = document.getElementById('iconUploadBtn');
+    const iconFileInput = document.getElementById('iconFileInput');
+    const iconSourceSelect = document.getElementById('iconSourceSelect');
+    const iconPackRow = document.getElementById('iconPackRow');
 
-function readFileAsArrayBuffer(file){ return new Promise((res,rej)=>{ const r = new FileReader(); r.onload = ()=>res(r.result); r.onerror = rej; r.readAsArrayBuffer(file); }); }
-function readFileAsBlob(file){ return new Promise((res,rej)=>{ const r = new FileReader(); r.onload = ()=>res(new Blob([r.result])); r.onerror = rej; r.readAsArrayBuffer(file); }); }
-function readFileAsDataURL(file){ return new Promise((res,rej)=>{ const r = new FileReader(); r.onload = ()=>res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
+    const mergeBtn = document.getElementById('mergeBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const progressWrap = document.getElementById('progressWrap');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const progressDetail = document.getElementById('progressDetail');
 
-fileInput.addEventListener('change', async (e)=>{
-  const files = Array.from(e.target.files || []);
-  if(files.length === 0) return;
-  // Add each file as a pack
-  for(const f of files){
-    // minimal name
-    const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
-    const packObj = { id, filename: f.name, file: f, zip: null, entries: new Map(), displayName: f.name, isBase: false, iconBlob: null, mcmeta: null };
-    packs.push(packObj);
-  }
+    const resetByOrderBtn = document.getElementById('resetByOrderBtn');
 
-  // mark first pack as base if none selected
-  if(!packs.some(p=>p.isBase)) packs[0].isBase = true;
-  await loadAllPacks();
-  rebuildUI();
-});
+    const toast = document.getElementById('toast');
+    const toastBox = toast.querySelector('div');
 
-iconInput.addEventListener('change', async (e)=>{
-  const f = e.target.files && e.target.files[0];
-  if(!f) { customIconBlob = null; iconPreview.innerHTML=''; return; }
-  if(f.type !== 'image/png'){ alert('pack icon must be a PNG (pack.png).'); iconInput.value=''; return; }
-  customIconBlob = f;
-  const d = await readFileAsDataURL(f);
-  iconPreview.innerHTML = `<img src="${d}" style="width:64px;height:64px;border-radius:6px;border:1px solid rgba(255,255,255,0.06)" />`;
-});
+    // ------- Helpers -------
+    function showToast(msg, color='white') {
+      toastBox.textContent = msg;
+      toastBox.style.color = color;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2400);
+    }
 
-async function loadAllPacks(){
-  progressText.textContent = 'Loading packs...';
-  progressBar.style.width = '4%';
-  for(let i=0;i<packs.length;i++){
-    const p = packs[i];
-    if(p.zip) continue; // already loaded
-    try{
-      const arr = await readFileAsArrayBuffer(p.file);
-      const zip = await JSZip.loadAsync(arr);
-      p.zip = zip;
-      // collect entries
-      p.entries = new Map();
-      Object.keys(zip.files).forEach(k=>{
-        const f = zip.files[k];
-        if(!f.dir){
-          // Normalize path: remove leading "./" and backslashes
-          let path = k.replace(/^(\.\/)+/,'').replace(/\\/g,'/');
-          p.entries.set(path, f);
+    function sanitizeFileName(name) {
+      return name.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'Merged_Pack';
+    }
+
+    function isSpecialPath(p) {
+      const lower = p.toLowerCase();
+      return lower === 'pack.mcmeta' || lower === 'pack.png';
+    }
+
+    function unionAllPaths() {
+      const all = new Set();
+      state.packs.forEach(p => {
+        p.files.forEach(fp => { if (!isSpecialPath(fp)) all.add(fp); });
+      });
+      const arr = Array.from(all).sort((a,b)=> a.localeCompare(b));
+      state.allPaths = arr;
+      applySearchFilter();
+    }
+
+    function applySearchFilter() {
+      const q = (searchInput.value || '').toLowerCase().trim();
+      if (!q) {
+        state.filteredPaths = state.allPaths.slice(0, state.renderLimit);
+      } else {
+        const filtered = state.allPaths.filter(p => p.toLowerCase().includes(q));
+        state.filteredPaths = filtered.slice(0, state.renderLimit);
+      }
+      updateFileCountFooter();
+      renderFileTable();
+    }
+
+    function updateFileCountFooter() {
+      const q = (searchInput.value || '').toLowerCase().trim();
+      const total = state.allPaths.length;
+      const shownCount = state.filteredPaths.length;
+      fileTableFooter.classList.toggle('hidden', total === 0);
+      fileCountText.textContent = q
+        ? `Showing ${shownCount} of ${total} matching files`
+        : `Showing ${shownCount} of ${total} files`;
+      loadMoreBtn.classList.toggle('hidden', shownCount >= (q ? state.allPaths.filter(p => p.toLowerCase().includes(q)).length : total));
+    }
+
+    function loadMoreRows() {
+      const q = (searchInput.value || '').toLowerCase().trim();
+      const baseArr = q ? state.allPaths.filter(p => p.toLowerCase().includes(q)) : state.allPaths;
+      const next = Math.min(baseArr.length, state.filteredPaths.length + state.renderLimit);
+      state.filteredPaths = baseArr.slice(0, next);
+      updateFileCountFooter();
+      renderFileTable();
+    }
+
+    function getOrder() {
+      // state.packs is always stored in order: index 0 = Base, 1 = Layer 1, etc.
+      return state.packs.map(p => p.id);
+    }
+
+    function packById(id) {
+      return state.packs.find(p => p.id === id);
+    }
+
+    function defaultProviderForPath(path) {
+      // Highest layer that contains the file wins
+      for (let i = state.packs.length - 1; i >= 0; i--) {
+        if (state.packs[i].files.has(path)) return state.packs[i].id;
+      }
+      return null;
+    }
+
+    function ensureSelectionDefaults() {
+      // For any path not chosen, assign default by order
+      state.allPaths.forEach(path => {
+        if (!state.selection.has(path)) {
+          const provider = defaultProviderForPath(path);
+          if (provider) state.selection.set(path, provider);
         }
       });
-      // try to read pack.png inside this pack (if present)
-      if(p.entries.has('pack.png')){
-        try{
-          const blob = await p.entries.get('pack.png').async('blob');
-          p.iconBlob = blob;
-        }catch(err){
-          console.warn('Could not read pack.png from', p.filename, err);
+    }
+
+    function resetSelectionByOrder() {
+      state.selection.clear();
+      ensureSelectionDefaults();
+      renderFileTable(); // Updates radios
+      showToast('Auto-picked sources by layer order', '#A7F3D0');
+    }
+
+    function updateHeadRow() {
+      fileTableHeadRow.innerHTML = '';
+      // First sticky column for Path
+      const thPath = document.createElement('th');
+      thPath.className = 'sticky-col left-0 py-3 px-3';
+      thPath.textContent = 'Path';
+      fileTableHeadRow.appendChild(thPath);
+      // Create a header per pack
+      state.packs.forEach((p, idx) => {
+        const th = document.createElement('th');
+        th.className = 'py-3 px-3 text-center whitespace-nowrap';
+        th.innerHTML = `<div class="inline-flex items-center gap-2">
+          <span class="inline-flex items-center justify-center h-6 w-6 rounded-full text-xs font-bold ${idx===0?'bg-emerald-500 text-emerald-950':'bg-white/10 text-white/80'}">${idx===0?'Base':idx}</span>
+          <span class="opacity-90">${escapeHtml(p.name)}</span>
+        </div>`;
+        fileTableHeadRow.appendChild(th);
+      });
+    }
+
+    function renderFileTable() {
+      // Head
+      updateHeadRow();
+      // Body
+      fileTableBody.innerHTML = '';
+      if (state.filteredPaths.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="py-6 text-white/60">No files to display.</td>`;
+        fileTableBody.appendChild(tr);
+        return;
+      }
+      const orderIds = getOrder();
+
+      state.filteredPaths.forEach((path, rowIdx) => {
+        const tr = document.createElement('tr');
+        tr.className = rowIdx % 2 ? 'bg-white/5' : '';
+        // Path cell
+        const tdPath = document.createElement('td');
+        tdPath.className = 'sticky-col left-0 py-2 px-3 max-w-[40ch] truncate';
+        tdPath.title = path;
+        tdPath.textContent = path;
+        tr.appendChild(tdPath);
+        // Pack options
+        orderIds.forEach((pid) => {
+          const pack = packById(pid);
+          const td = document.createElement('td');
+          td.className = 'py-2 px-3 text-center';
+          if (pack.files.has(path)) {
+            const selected = (state.selection.get(path) === pid) ||
+              (!state.selection.has(path) && defaultProviderForPath(path) === pid);
+            td.innerHTML = `
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="src-${cssHash(path)}" value="${pid}" ${selected?'checked':''} class="h-4 w-4 accent-emerald-400" />
+                <span class="text-xs text-white/70">Use</span>
+              </label>
+            `;
+            const input = td.querySelector('input');
+            input.addEventListener('change', () => {
+              state.selection.set(path, pid);
+            });
+          } else {
+            td.innerHTML = `<span class="text-xs text-white/30">—</span>`;
+          }
+          tr.appendChild(td);
+        });
+        fileTableBody.appendChild(tr);
+      });
+    }
+
+    function renderLayers() {
+      layersList.innerHTML = '';
+      if (state.packs.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'text-white/60 text-sm';
+        empty.textContent = 'No packs uploaded yet.';
+        layersList.appendChild(empty);
+        mergeBtn.disabled = true;
+        return;
+      }
+      mergeBtn.disabled = false;
+
+      state.packs.forEach((p, idx) => {
+        const row = document.createElement('div');
+        row.className = 'rounded-xl bg-white/5 ring-1 ring-white/10 p-3 flex items-center justify-between gap-3';
+        row.innerHTML = `
+          <div class="flex items-center gap-3 overflow-hidden">
+            <span class="inline-flex items-center justify-center h-7 w-7 rounded-lg text-xs font-bold ${idx===0?'bg-emerald-500 text-emerald-950':'bg-white/10 text-white/80'}">${idx===0?'Base':idx}</span>
+            <div class="min-w-0">
+              <p class="truncate font-medium">${escapeHtml(p.name)}</p>
+              <p class="text-xs text-white/50 truncate">${escapeHtml(p.file.name)}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button class="rounded-lg bg-slate-700/60 hover:bg-slate-700 px-2.5 py-1.5 text-xs" data-action="set-base">Set as Base</button>
+            <button class="rounded-lg bg-slate-700/60 hover:bg-slate-700 px-2.5 py-1.5 text-xs" data-action="up">Up</button>
+            <button class="rounded-lg bg-slate-700/60 hover:bg-slate-700 px-2.5 py-1.5 text-xs" data-action="down">Down</button>
+            <button class="rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 px-2.5 py-1.5 text-xs" data-action="remove">Remove</button>
+          </div>
+        `;
+        // Events
+        row.querySelector('[data-action="set-base"]').addEventListener('click', (e) => {
+          e.preventDefault();
+          movePackToIndex(p.id, 0);
+        });
+        row.querySelector('[data-action="up"]').addEventListener('click', (e) => {
+          e.preventDefault();
+          movePackRelative(p.id, -1);
+        });
+        row.querySelector('[data-action="down"]').addEventListener('click', (e) => {
+          e.preventDefault();
+          movePackRelative(p.id, +1);
+        });
+        row.querySelector('[data-action="remove"]').addEventListener('click', (e) => {
+          e.preventDefault();
+          removePack(p.id);
+        });
+        layersList.appendChild(row);
+      });
+
+      renderIconSourceChoices();
+      updateHeadRow();
+      applySearchFilter();
+    }
+
+    function movePackRelative(id, delta) {
+      const idx = state.packs.findIndex(p => p.id === id);
+      if (idx < 0) return;
+      const newIdx = idx + delta;
+      if (newIdx < 0 || newIdx >= state.packs.length) return;
+      const [moved] = state.packs.splice(idx, 1);
+      state.packs.splice(newIdx, 0, moved);
+      renderLayers();
+      // Do not reset user choices; defaults will still use new order where not chosen
+      renderFileTable();
+    }
+
+    function movePackToIndex(id, targetIndex) {
+      const idx = state.packs.findIndex(p => p.id === id);
+      if (idx < 0 || targetIndex < 0 || targetIndex >= state.packs.length) return;
+      const [moved] = state.packs.splice(idx, 1);
+      state.packs.splice(targetIndex, 0, moved);
+      renderLayers();
+      renderFileTable();
+    }
+
+    function removePack(id) {
+      // Remove from list
+      const idx = state.packs.findIndex(p => p.id === id);
+      if (idx >= 0) {
+        state.packs.splice(idx, 1);
+      }
+      // Clean selection: if a path was selecting this pack, leave it for defaults later
+      const toDelete = [];
+      state.selection.forEach((pid, path) => {
+        if (pid === id) toDelete.push(path);
+      });
+      toDelete.forEach(path => state.selection.delete(path));
+      // Update paths union
+      unionAllPaths();
+      renderLayers();
+      renderFileTable();
+      showToast('Removed pack', '#FCA5A5');
+    }
+
+    function renderIconSourceChoices() {
+      // Reset pack icon choices row
+      iconPackRow.innerHTML = '';
+      const withIcons = state.packs.filter(p => p.hasIcon);
+      if (withIcons.length > 0) {
+        // Add options to select dropdown dynamically
+        // Keep existing selection if possible
+        const prev = iconSourceSelect.value;
+        // Rebuild options
+        iconSourceSelect.innerHTML = `<option value="custom"${state.iconSource==='custom'?' selected':''}>Use uploaded icon</option>
+          <option value="none"${state.iconSource==='none'?' selected':''}>No icon</option>`;
+        withIcons.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `Use icon from: ${p.name}`;
+          if (state.iconSource === p.id) opt.selected = true;
+          iconSourceSelect.appendChild(opt);
+        });
+      } else {
+        iconSourceSelect.innerHTML = `
+          <option value="custom"${state.iconSource==='custom'?' selected':''}>Use uploaded icon</option>
+          <option value="none"${state.iconSource==='none'?' selected':''}>No icon</option>
+        `;
+      }
+      updateIconPreview();
+    }
+
+    function updateIconPreview() {
+      iconPreview.style.backgroundSize = 'cover';
+      iconPreview.style.backgroundPosition = 'center';
+      iconPreview.style.backgroundImage = 'none';
+      iconPreview.innerHTML = `
+        <svg viewBox="0 0 24 24" class="w-8 h-8 text-white/60" fill="currentColor" aria-hidden="true">
+          <path d="M12 3l9 4.5v9L12 21 3 16.5v-9L12 3zm0 2.236L5 8.118v7.764L12 18.764l7-2.882V8.118L12 5.236z"></path>
+        </svg>
+      `;
+      if (state.iconSource === 'custom' && state.userIcon?.dataUrl) {
+        iconPreview.innerHTML = '';
+        iconPreview.style.backgroundImage = `url('${state.userIcon.dataUrl}')`;
+      } else if (state.iconSource !== 'custom' && state.iconSource !== 'none') {
+        // We'll preview the chosen pack's icon if we have it
+        const pack = packById(state.iconSource);
+        if (pack && pack.iconDataUrl) {
+          iconPreview.innerHTML = '';
+          iconPreview.style.backgroundImage = `url('${pack.iconDataUrl}')`;
         }
       }
-      // read pack.mcmeta if present
-      if(p.entries.has('pack.mcmeta')){
-        try{
-          const txt = await p.entries.get('pack.mcmeta').async('string');
-          p.mcmeta = JSON.parse(txt);
-        }catch(err){
-          p.mcmeta = null;
+    }
+
+    function cssHash(str) {
+      let h = 0;
+      for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+      return 'h' + (h >>> 0).toString(16);
+    }
+
+    function escapeHtml(str='') {
+      return str.replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    async function readAsArrayBuffer(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = () => reject(new Error('Failed to read file'));
+        r.readAsArrayBuffer(file);
+      });
+    }
+
+    async function readAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = () => reject(new Error('Failed to read image'));
+        r.readAsDataURL(file);
+      });
+    }
+
+    async function fileFromZip(zip, path, as='uint8array') {
+      const f = zip.file(path);
+      if (!f) return null;
+      return await f.async(as);
+    }
+
+    // ------- Upload handling -------
+    browseBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      await handleZipFiles(files);
+      fileInput.value = '';
+    });
+
+    // Drag & drop
+    ;['dragenter','dragover'].forEach(evt => {
+      dropZone.addEventListener(evt, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropZone.classList.add('drop-over');
+      });
+    });
+    ;['dragleave','drop'].forEach(evt => {
+      dropZone.addEventListener(evt, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropZone.classList.remove('drop-over');
+      });
+    });
+    dropZone.addEventListener('drop', async (e) => {
+      const files = Array.from(e.dataTransfer.files || []).filter(f => /\.zip$/i.test(f.name));
+      if (!files.length) {
+        showToast('Please drop .zip files only');
+        return;
+      }
+      await handleZipFiles(files);
+    });
+
+    async function handleZipFiles(files) {
+      uploadNotice.classList.add('hidden');
+      for (const f of files) {
+        if (!/\.zip$/i.test(f.name)) {
+          uploadNotice.textContent = `Skipped non-zip file: ${f.name}`;
+          uploadNotice.classList.remove('hidden');
+          continue;
+        }
+        try {
+          await addPackFile(f);
+        } catch (err) {
+          console.error(err);
+          showToast(`Failed to load ${f.name}`, '#FCA5A5');
         }
       }
-      // display name: if mcmeta contains description (string) we can show short, else filename
-      p.displayName = p.filename;
-    }catch(err){
-      console.error('Error reading pack', p.filename, err);
-      alert('Failed to read ZIP '+p.filename+': '+err);
-    }
-    progressBar.style.width = `${4 + Math.round((i+1)/packs.length*40)}%`;
-  }
-  // collect all unique file paths
-  pathSet.clear();
-  for(const p of packs){
-    for(const path of p.entries.keys()) pathSet.add(path);
-  }
-  // Convert to sorted list (with directories like assets/ first)
-  pathList = Array.from(pathSet).sort((a,b)=>{
-    // prefer shorter paths first
-    if(a.length !== b.length) return a.length - b.length;
-    return a.localeCompare(b);
-  });
-  progressBar.style.width = '48%';
-  progressText.textContent = 'Packs loaded';
-  downloadBtn.disabled = true;
-}
-
-function rebuildUI(){
-  // packs list
-  packsListEl.innerHTML = '';
-  for(let idx=0; idx<packs.length; idx++){
-    const p = packs[idx];
-    const el = document.createElement('div');
-    el.className = 'pack-item';
-    el.dataset.id = p.id;
-
-    const iconEl = document.createElement('div');
-    if(p.iconBlob){
-      const url = URL.createObjectURL(p.iconBlob);
-      iconEl.innerHTML = `<img src="${url}" alt="icon">`;
-    } else {
-      iconEl.innerHTML = `<img src="data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect rx='6' width='100%' height='100%' fill='%230a1a2a'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='11' fill='%237dd3fc' font-family='Arial'>PACK</text></svg>`) }" />`;
+      unionAllPaths();
+      ensureSelectionDefaults();
+      renderLayers();
+      renderFileTable();
+      // Enable merge if at least two packs? Not required; can merge one pack + edits
+      mergeBtn.disabled = state.packs.length === 0;
     }
 
-    const meta = document.createElement('div');
-    meta.className = 'pack-meta';
-    const nameLine = document.createElement('div');
-    nameLine.textContent = p.displayName;
-    const fileLine = document.createElement('div');
-    fileLine.className = 'muted';
-    fileLine.textContent = p.filename;
-    meta.appendChild(nameLine);
-    meta.appendChild(fileLine);
+    async function addPackFile(file) {
+      const buf = await readAsArrayBuffer(file);
+      const zip = await JSZip.loadAsync(buf);
+      // Collect file paths
+      const files = new Set();
+      let hasIcon = false;
+      let iconPath = null;
+      for (const path in zip.files) {
+        if (zip.files[path].dir) continue;
+        files.add(path);
+        const lower = path.toLowerCase();
+        if (lower === 'pack.png') { hasIcon = true; iconPath = path; }
+      }
+      const id = 'pack-' + Math.random().toString(36).slice(2, 9);
+      const name = file.name.replace(/\.zip$/i, '');
+      const pack = { id, name, file, zip, files, hasIcon, iconPath, iconDataUrl: null };
+      // Read icon data URL if exists (for preview)
+      if (hasIcon) {
+        try {
+          const bytes = await fileFromZip(zip, iconPath, 'uint8array');
+          const blob = new Blob([bytes], { type: 'image/png' });
+          pack.iconDataUrl = await blobToDataUrl(blob);
+        } catch {}
+      }
+      state.packs.push(pack);
+      // Default pack name to zip name, editor defaults
+      if (!packName.value) packName.value = 'Merged Pack';
+      if (!packDesc.value) packDesc.value = "merged by og krish's webisite";
+      renderIconSourceChoices();
+      showToast(`Added: ${file.name}`, '#A7F3D0');
+    }
 
-    const controls = document.createElement('div');
-    controls.className = 'pack-controls';
-    controls.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label class="radio-label"><input type="radio" name="base-radio" ${p.isBase ? 'checked' : ''} style="accent-color:var(--accent)" /> base</label>
-        <div class="pack-order-controls">
-          <button title="move up" data-action="up">▲</button>
-          <button title="move down" data-action="down">▼</button>
-          <button title="remove pack" data-action="remove" style="color:var(--danger)">✕</button>
-        </div>
-      </div>
-    `;
-    el.appendChild(iconEl);
-    el.appendChild(meta);
-    el.appendChild(controls);
-    packsListEl.appendChild(el);
+    async function blobToDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+      });
+    }
 
-    controls.querySelector('[data-action="up"]').addEventListener('click', ()=>{ if(idx>0){ packs.splice(idx,1); packs.splice(idx-1,0,p); rebuildUI(); rebuildFilesSelection(); }});
-    controls.querySelector('[data-action="down"]').addEventListener('click', ()=>{ if(idx<packs.length-1){ packs.splice(idx,1); packs.splice(idx+1,0,p); rebuildUI(); rebuildFilesSelection(); }});
-    controls.querySelector('[data-action="remove"]').addEventListener('click', ()=>{ if(!confirm('Remove this pack from the list?')) return; packs.splice(idx,1); if(packs.length>0 && !packs.some(x=>x.isBase)) packs[0].isBase=true; rebuildUI(); rebuildFilesSelection(); });
-    controls.querySelector('input[type="radio"]').addEventListener('change', ()=>{
-      packs.forEach(x=>x.isBase=false);
-      p.isBase = true;
-      rebuildFilesSelection();
+    clearAllBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      state.packs = [];
+      state.selection.clear();
+      state.allPaths = [];
+      state.filteredPaths = [];
+      revokeOutZipUrl();
+      renderLayers();
+      renderFileTable();
+      renderIconSourceChoices();
+      showToast('Cleared all packs', '#FCA5A5');
     });
-  }
 
-  // build files table
-  if(pathList.length === 0){
-    filesEmpty.style.display = '';
-    filesTable.setAttribute('aria-hidden','true');
-    fileCountEl.textContent = 'No files loaded';
-    filesTbody.innerHTML = '';
-  }else{
-    filesEmpty.style.display = 'none';
-    filesTable.removeAttribute('aria-hidden');
-    fileCountEl.textContent = `${pathList.length} unique files across ${packs.length} pack(s)`;
-    filesTbody.innerHTML = '';
-    for(const path of pathList){
-      const tr = document.createElement('tr');
-      const tdPath = document.createElement('td');
-      tdPath.textContent = path;
-      const tdSelect = document.createElement('td');
-      // create select with options per pack and "None" (skip)
-      const sel = document.createElement('select');
-      sel.dataset.path = path;
-      const noneOpt = document.createElement('option');
-      noneOpt.value = '__none';
-      noneOpt.textContent = '(skip / omit file)';
-      sel.appendChild(noneOpt);
-      for(const p of packs){
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.filename + (p.entries.has(path) ? ' ✓' : ' (missing)');
-        sel.appendChild(opt);
-      }
-      // set default selection: base pack if it contains path, else first pack that contains path
-      const base = packs.find(x=>x.isBase);
-      let defaultSel = '__none';
-      if(base && base.entries.has(path)) defaultSel = base.id;
-      else {
-        for(const p of packs){ if(p.entries.has(path)){ defaultSel = p.id; break; } }
-      }
-      sel.value = defaultSel;
-      selectionForPath.set(path, defaultSel);
-
-      sel.addEventListener('change', (ev)=>{ selectionForPath.set(path, ev.target.value); });
-
-      tdSelect.appendChild(sel);
-
-      const tdInfo = document.createElement('td');
-      tdInfo.className = 'muted';
-      // show which packs include it
-      const included = packs.filter(p=>p.entries.has(path)).map(p=>p.filename);
-      tdInfo.textContent = included.length ? `Present in: ${included.join(', ')}` : 'Not present in any pack (should not happen)';
-      tr.appendChild(tdPath);
-      tr.appendChild(tdSelect);
-      tr.appendChild(tdInfo);
-      filesTbody.appendChild(tr);
-    }
-  }
-}
-
-function rebuildFilesSelection(){
-  // when packs reorder or base changes, we want to update selects default where appropriate but keep user choices if possible
-  // We'll update the option text and keep selection where valid; if previously selected pack removed, try base or first available.
-  const selects = filesTbody.querySelectorAll('select');
-  selects.forEach(sel=>{
-    const path = sel.dataset.path;
-    const prev = sel.value;
-    const currentVal = selectionForPath.get(path) || '__none';
-    // rebuild options
-    sel.innerHTML = '';
-    const noneOpt = document.createElement('option'); noneOpt.value='__none'; noneOpt.textContent='(skip / omit file)'; sel.appendChild(noneOpt);
-    for(const p of packs){
-      const opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.filename + (p.entries.has(path) ? ' ✓' : ' (missing)'); sel.appendChild(opt);
-    }
-    // choose value: if prev still present, keep it; else if base contains path pick base; else first that contains; else none
-    let newVal = '__none';
-    if(packs.some(p=>p.id === prev)) newVal = prev;
-    else{
-      const base = packs.find(x=>x.isBase);
-      if(base && base.entries.has(path)) newVal = base.id;
-      else{
-        const firstHas = packs.find(p=>p.entries.has(path));
-        newVal = firstHas ? firstHas.id : '__none';
-      }
-    }
-    sel.value = newVal;
-    selectionForPath.set(path, newVal);
-    // attach change
-    sel.onchange = (e)=> selectionForPath.set(path, e.target.value);
-  });
-
-  // update packs list UI
-  packsListEl.childNodes.forEach((el, idx)=>{
-    const id = el.dataset.id;
-    const pack = packs.find(p=>p.id===id);
-    if(pack){
-      const radio = el.querySelector('input[type="radio"]');
-      radio.checked = pack.isBase;
-    }
-  });
-
-  fileCountEl.textContent = `${pathList.length} unique files across ${packs.length} pack(s)`;
-}
-
-/* Merge process:
-   - Build new JSZip
-   - For each path in pathList:
-       - get selectionForPath[path] => packId or '__none'
-       - if __none -> skip
-       - if pack has entry for path -> fetch binary and add to outZip
-       - else -> skip (file missing); warn in console
-   - Add pack.mcmeta generated from mergedName & mergedDesc and pack_format from base if present else default 6
-   - Add pack.png from customIconBlob if provided; else prefer base pack's pack.png if that pack has one
-   - Generate zip blob and enable download
-*/
-async function doMerge(){
-  if(packs.length === 0){ alert('No packs loaded'); return; }
-  progressText.textContent = 'Preparing merge...';
-  progressBar.style.width = '2%';
-  mergeBtn.disabled = true;
-  downloadBtn.disabled = true;
-
-  const outZip = new JSZip();
-  const totalPaths = pathList.length;
-  let processed = 0;
-  let addedCount = 0;
-  const warnings = [];
-
-  // Determine pack_format default: use base's pack.mcmeta.pack.pack_format if present
-  let pack_format = 6; // a reasonable default (Minecraft 1.16-1.19 vary; 6 is typical for modern)
-  const base = packs.find(p=>p.isBase);
-  if(base && base.mcmeta && base.mcmeta.pack && typeof base.mcmeta.pack.pack_format === 'number') pack_format = base.mcmeta.pack.pack_format;
-
-  for(const path of pathList){
-    processed++;
-    const selId = selectionForPath.get(path) || '__none';
-    if(selId === '__none'){ updateProgress(processed/totalPaths, `Skipping ${path}`); continue; }
-    const sourcePack = packs.find(p=>p.id === selId);
-    if(!sourcePack){ warnings.push(`Selected pack not found for ${path}`); updateProgress(processed/totalPaths); continue; }
-    if(!sourcePack.entries.has(path)){ warnings.push(`Pack "${sourcePack.filename}" does not contain ${path}`); updateProgress(processed/totalPaths); continue; }
-    try{
-      const entry = sourcePack.entries.get(path);
-      // read as uint8array to preserve binary
-      const data = await entry.async('uint8array');
-      outZip.file(path, data);
-      addedCount++;
-    }catch(err){
-      console.warn('Failed to add', path, 'from', sourcePack.filename, err);
-      warnings.push(`Failed to add ${path} from ${sourcePack.filename}: ${err}`);
-    }
-    updateProgress(processed/totalPaths, `Added ${path} from ${sourcePack.filename}`);
-  }
-
-  // add pack.mcmeta
-  const nameVal = mergedNameInput.value.trim() || (base && base.filename) || 'Merged Resource Pack';
-  const descVal = mergedDescInput.value || "Merged by OG Krish's website";
-  const mcmetaObj = { pack: { pack_format: pack_format, description: descVal } };
-  outZip.file('pack.mcmeta', JSON.stringify(mcmetaObj, null, 2));
-  // add pack.png (custom icon if provided else base's pack.png if present else none)
-  if(customIconBlob){
-    outZip.file('pack.png', customIconBlob);
-  }else if(base && base.iconBlob){
-    outZip.file('pack.png', base.iconBlob);
-  }
-  // finalize zip
-  progressText.textContent = 'Generating merged ZIP...';
-  progressBar.style.width = '92%';
-  try{
-    const blob = await outZip.generateAsync({type:'blob'}, (meta)=> {
-      // meta.percent goes 0-100
-      progressBar.style.width = `${92 + Math.round(meta.percent*0.08)}%`;
+    // ------- Search & pagination -------
+    searchInput.addEventListener('input', () => {
+      state.renderLimit = 200;
+      applySearchFilter();
     });
-    mergedZipBlob = blob;
-    const suggestedName = nameVal.replace(/[\\\/:*?"<>|]+/g,'_').slice(0,120) || 'merged-pack';
-    mergedZipBlob.name = suggestedName + '.zip';
-    downloadBtn.disabled = false;
-    progressBar.style.width = '100%';
-    progressText.textContent = `Done — ${addedCount} files added, ${warnings.length} warnings`;
-    if(warnings.length) console.warn('Merge warnings', warnings);
-  }catch(err){
-    progressText.textContent = 'Failed to generate ZIP: ' + err;
-    progressBar.style.width = '4%';
-    console.error(err);
-    alert('Failed to generate merged zip: ' + err);
-  }finally{
-    mergeBtn.disabled = false;
-  }
-}
+    loadMoreBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      loadMoreRows();
+    });
+    backToTopBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      fileTableScroll.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+    });
+    resetByOrderBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      resetSelectionByOrder();
+    });
 
-function updateProgress(fraction, status){
-  const pct = Math.round(Math.min(1,Math.max(0,fraction)) * 90); // map to 0-90 range for main file loop
-  progressBar.style.width = `${2 + pct}%`;
-  progressText.textContent = status ? status : `${Math.round(fraction*100)}%`;
-}
+    // ------- Icon handling -------
+    iconUploadBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      iconFileInput.click();
+    });
+    iconFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.type !== 'image/png') {
+        showToast('Please upload a PNG image for the icon');
+        return;
+      }
+      const dataUrl = await readAsDataUrl(file);
+      const bytes = new Uint8Array(await (await fetch(dataUrl)).arrayBuffer());
+      state.userIcon = { dataUrl, bytes };
+      state.iconSource = 'custom';
+      iconSourceSelect.value = 'custom';
+      updateIconPreview();
+      showToast('Icon loaded', '#A7F3D0');
+    });
+    iconSourceSelect.addEventListener('change', (e) => {
+      state.iconSource = e.target.value;
+      updateIconPreview();
+    });
 
-mergeBtn.addEventListener('click', async ()=>{
-  if(packs.length === 0){ alert('No packs loaded'); return; }
-  if(!confirm('Start merge? This will read all selected files from the chosen packs and build a merged ZIP in your browser.')) return;
-  await doMerge();
-});
+    // ------- Editor form -------
+    editorForm.addEventListener('submit', (e) => e.preventDefault());
 
-downloadBtn.addEventListener('click', ()=>{
-  if(!mergedZipBlob){ alert('No merged pack ready — click Merge first.'); return; }
-  const filename = (mergedZipBlob.name || 'merged-pack.zip');
-  saveAs(mergedZipBlob, filename);
-});
+    // ------- Merge -------
+    mergeBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (state.packs.length === 0) {
+        showToast('Upload at least one pack first');
+        return;
+      }
+      const outName = sanitizeFileName(packName.value || 'Merged_Pack') + '.zip';
+      await doMerge(outName);
+    });
 
-refreshBtn.addEventListener('click', async ()=>{
-  // reload zip entries from file objects (useful after reorder)
-  // Clear zip caches for all packs so they will be reloaded on demand
-  packs.forEach(p=>{ p.zip = null; p.entries = new Map(); p.mcmeta = null; p.iconBlob = null; });
-  await loadAllPacks();
-  rebuildUI();
-});
+    function revokeOutZipUrl() {
+      if (state.outZipBlobUrl) {
+        try { URL.revokeObjectURL(state.outZipBlobUrl); } catch {}
+        state.outZipBlobUrl = null;
+      }
+      downloadBtn.href = '';
+      downloadBtn.classList.add('pointer-events-none');
+      downloadBtn.classList.add('opacity-60');
+    }
 
-resetBtn.addEventListener('click', ()=>{
-  if(!confirm('Clear all packs and settings?')) return;
-  resetAll();
-});
+    async function doMerge(outFileName) {
+      progressWrap.classList.remove('hidden');
+      progressBar.style.width = '0%';
+      progressText.textContent = '0%';
+      progressDetail.textContent = 'Preparing...';
+      revokeOutZipUrl();
 
-// initial small helper: if user opens page and programmatically wants to set defaults
-window.addEventListener('beforeunload', (e)=>{ /* allow navigation */ });
+      // Build final selection: for every path in union, either user’s choice or default
+      ensureSelectionDefaults();
 
-</script>
-</body>
-</html>
+      const outZip = new JSZip();
+      const paths = state.allPaths.slice();
+      const totalSteps = paths.length + 2; // +meta +icon
+      let done = 0;
+
+      function updateProgress(detail) {
+        done++;
+        const pct = Math.min(100, Math.floor(done / totalSteps * 100));
+        progressBar.style.width = pct + '%';
+        progressText.textContent = pct + '%';
+        progressDetail.textContent = detail || '';
+      }
+
+      // Add selected files
+      for (const path of paths) {
+        const providerId = state.selection.get(path) || defaultProviderForPath(path);
+        const pack = packById(providerId);
+        if (!pack) continue;
+        try {
+          const bytes = await fileFromZip(pack.zip, path, 'uint8array');
+          if (bytes) {
+            outZip.file(path, bytes);
+          }
+        } catch (err) {
+          console.warn('Skipping file due to read error:', path, err);
+        }
+        updateProgress(`Added: ${path}`);
+      }
+
+      // pack.mcmeta
+      const meta = {
+        pack: {
+          pack_format: Number(packFormat.value || 15),
+          description: (packDesc.value || "merged by og krish's webisite")
+        }
+      };
+      outZip.file('pack.mcmeta', JSON.stringify(meta, null, 2));
+      updateProgress('Added: pack.mcmeta');
+
+      // pack.png (icon)
+      if (state.iconSource === 'custom' && state.userIcon?.bytes) {
+        outZip.file('pack.png', state.userIcon.bytes);
+      } else if (state.iconSource !== 'none' && state.iconSource !== 'custom') {
+        const iconFromPack = packById(state.iconSource);
+        if (iconFromPack?.iconPath) {
+          try {
+            const bytes = await fileFromZip(iconFromPack.zip, iconFromPack.iconPath, 'uint8array');
+            if (bytes) outZip.file('pack.png', bytes);
+          } catch (err) {
+            console.warn('Icon read failed, skipping.');
+          }
+        } else {
+          // fallback: try highest layer icon if exists and user didn’t set 'none'
+          for (let i = state.packs.length - 1; i >= 0; i--) {
+            if (state.packs[i].hasIcon) {
+              try {
+                const bytes = await fileFromZip(state.packs[i].zip, state.packs[i].iconPath, 'uint8array');
+                if (bytes) { outZip.file('pack.png', bytes); break; }
+              } catch {}
+            }
+          }
+        }
+      }
+      updateProgress('Added: pack.png (if chosen)');
+
+      // Generate zip
+      progressDetail.textContent = 'Compressing...';
+      try {
+        const blob = await outZip.generateAsync({ type: 'blob', compression: 'DEFLATE' }, (metadata) => {
+          // Optionally show compression progress
+          const pct = Math.min(100, Math.floor(metadata.percent));
+          progressBar.style.width = pct + '%';
+          progressText.textContent = pct + '%';
+        });
+        state.outZipBlobUrl = URL.createObjectURL(blob);
+        downloadBtn.href = state.outZipBlobUrl;
+        downloadBtn.setAttribute('download', outFileName);
+        downloadBtn.classList.remove('pointer-events-none');
+        downloadBtn.classList.remove('opacity-60');
+        progressDetail.textContent = 'Ready to download!';
+        showToast('Merge complete. Download is ready.', '#A7F3D0');
+      } catch (err) {
+        console.error(err);
+        showToast('Merge failed. Please try again.', '#FCA5A5');
+      }
+    }
+
+    // ------- Initialize defaults -------
+    packDesc.placeholder = "merged by og krish's webisite";
+    packName.placeholder = "Merged Pack";
+
+    // ------- Security/Navigation notes -------
+    // All forms use preventDefault; downloads happen via blob links; no page navigation.
+
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9839f53ea2b8e084',t:'MTc1ODYyOTYyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>  
