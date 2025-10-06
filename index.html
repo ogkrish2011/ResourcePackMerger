@@ -1,510 +1,689 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Minecraft Resource Pack Combiner </title>
+  <title>Minecraft Resource Pack Combiner — OG Krish</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Tailwind CSS (CDN) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- JSZip (for handling zip files client-side) -->
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <!-- JSZip via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-+gV0f0K3JXb4n0z3h9a7L5T0m36vJt+0rU8h3h4fuh8aTqj29k9H9rTzY+qKQm0e4JbR4I2xg8Vv1Gx3xJvEwg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- FileSaver for download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" integrity="sha512-v2f1G6ZbU5Jm5j3hI5F3Dkm9pA9w9w8gW0hXkQ5Zp0g0H3lIY0b5n6yS5gW8jYVfFzT7o7O8z4H6Gd2pZr2a0w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
   <style>
-    /* Smooth scrolling for better UX */
-    html { scroll-behavior: smooth; }
-    /* Hide default file input, we’ll use a styled button */
-    input[type="file"].hidden-input { position: absolute; left: -9999px; }
-    /* Simple drag-over style */
-    .drop-over { outline: 2px dashed rgba(255,255,255,0.5); outline-offset: 8px; }
-    /* Make the file table horizontally scrollable on small screens */
-    .file-table-wrap { overflow: hidden; }
-    .file-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    /* Sticky first column for better readability on wide lists */
-    .sticky-col { position: sticky; left: 0; z-index: 10; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(6px); }
-    /* Custom thin scrollbar for large lists */
-    .file-table-scroll::-webkit-scrollbar { height: 10px; }
-    .file-table-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 9999px; }
+    :root {
+      --bg: #0c0f10;
+      --panel: #13181b;
+      --muted: #c9d1d9;
+      --accent: #00e676;
+      --accent-dim: #00b85c;
+      --border: #1f2529;
+      --danger: #ff5252;
+      --warn: #ffb300;
+    }
+    * { box-sizing: border-box }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 80% -20%, #10231c 0%, #0c0f10 45%) no-repeat, var(--bg);
+      color: var(--muted);
+    }
+    header {
+      padding: 24px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo {
+      width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #0f3 0%, #0a4 60%, #062 100%);
+      box-shadow: 0 0 16px rgba(0, 230, 118, 0.35), inset 0 0 12px rgba(0, 230, 118, 0.3);
+    }
+    h1 { font-size: 20px; margin: 0; color: #e6fff0 }
+    main { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px }
+    @media (max-width: 980px) { main { grid-template-columns: 1fr } }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      backdrop-filter: blur(6px);
+    }
+    .card h2 { margin: 0 0 10px 0; font-size: 16px; color: #e9fff3 }
+    .row { display: flex; gap: 10px; flex-wrap: wrap }
+    .row > * { flex: 1 }
+    button, .btn {
+      background: var(--accent);
+      color: #08130e;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.05s ease, box-shadow 0.15s ease;
+      box-shadow: 0 6px 18px rgba(0, 230, 118, 0.18);
+      white-space: nowrap;
+    }
+    button:hover, .btn:hover { transform: translateY(-1px) }
+    button:disabled { opacity: 0.6; cursor: not-allowed }
+    .btn-secondary {
+      background: #1b2327; color: #d4e9dd; border: 1px solid var(--border); box-shadow: none;
+    }
+    .packs {
+      display: grid; gap: 10px;
+    }
+    .pack {
+      display: grid; grid-template-columns: 36px 1fr auto auto;
+      align-items: center; gap: 10px; padding: 8px;
+      border: 1px dashed var(--border); border-radius: 10px;
+    }
+    .pack .drag {
+      width: 36px; height: 36px; display: grid; place-items: center;
+      color: #7bb; background: #101618; border-radius: 8px; font-size: 18px;
+    }
+    .pack .meta { display: flex; flex-direction: column; gap: 2px }
+    .pack .meta .name { color: #e6fff0; font-weight: 600; overflow-wrap: anywhere }
+    .pack .meta .size { font-size: 12px; color: #a7b7af }
+    .pack .role { margin-right: 8px }
+    select, input[type="text"], input[type="number"], input[type="file"], textarea {
+      width: 100%; background: #0e1416; color: #e5fff2; border: 1px solid var(--border);
+      padding: 10px; border-radius: 10px; outline: none;
+    }
+    label { font-size: 12px; color: #a7b7af }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+    @media (max-width: 680px) { .grid2 { grid-template-columns: 1fr } }
+    .divider { height: 1px; background: var(--border); margin: 10px 0 }
+    .filemap { max-height: 320px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #0b1012 }
+    .file-row { display: grid; grid-template-columns: 1fr 200px; gap: 8px; align-items: center; padding: 6px 4px; border-bottom: 1px dashed #122026 }
+    .file-row:last-child { border-bottom: none }
+    .muted { color: #a7b7af }
+    .progress-wrap {
+      height: 10px; background: #0e1518; border: 1px solid var(--border); border-radius: 999px; overflow: hidden;
+    }
+    .progress { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-dim)); transition: width 0.2s ease }
+    .badge { font-size: 12px; color: #cde8de; background: #0e1b16; border: 1px solid #17362b; padding: 2px 6px; border-radius: 999px }
+    .danger { background: var(--danger); color: #fff }
+    .warn { background: var(--warn); color: #1b1300 }
+    .pill { padding: 4px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border); background: #11181a; color: #d8efe4 }
+    .footer { padding: 14px 20px; border-top: 1px solid var(--border); color: #8db39f; font-size: 12px }
+    .modrinth-bar { display: flex; gap: 6px }
+    .small { font-size: 12px }
+    .hint { font-size: 12px; color: #9ab8ad }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-emerald-900 via-slate-900 to-indigo-900 text-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <header class="mb-8">
-      <div class="flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center ring-1 ring-emerald-400/30">
-            <!-- Pickaxe-like SVG -->
-            <svg viewBox="0 0 24 24" class="w-6 h-6 text-emerald-300" fill="currentColor" aria-hidden="true">
-              <path d="M14.5 4.5 20 10l-2 2-5.5-5.5 2-2zm-2.793 3.207L5.207 14.207a1 1 0 0 0-.293.707V19a1 1 0 0 0 1 1h4.086a1 1 0 0 0 .707-.293l6.5-6.5-5.5-5.5z"></path>
-            </svg>
-          </div>
-          <div>
-            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Minecraft Resource Pack Combiner</h1>
-            <p class="text-sm text-emerald-200/80">Upload packs, pick sources, set name/icon, merge, and download. Default description: “merged by og krish's webisite”.</p>
-          </div>
+<body>
+  <header>
+    <div class="logo"></div>
+    <div>
+      <h1>OG Krish — Resource Pack Combiner</h1>
+      <div class="hint">Combine multiple Minecraft resource packs, choose overrides, edit icon/name, and download a merged pack.</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left: Packs & Modrinth -->
+    <section class="card">
+      <h2>Packs & sources</h2>
+      <div class="row">
+        <div>
+          <label>Upload resource pack ZIPs (first becomes Base; re-order later)</label>
+          <input id="fileInput" type="file" accept=".zip" multiple />
         </div>
-        <div class="flex items-center gap-3">
-            <button id="modrinthBtn" class="inline-flex items-center gap-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-indigo-950 px-4 py-2 font-semibold transition">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-                Browse Modrinth
-              </button>
-            <a href="#merge" class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 px-4 py-2 font-semibold transition">
-            Go to Merge
-            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" aria-hidden="true"><path d="M13 5l7 7-7 7M5 12h14"></path></svg>
-            </a>
-        </div>
-      </div>
-    </header>
-
-    <!-- Steps -->
-    <ol class="grid lg:grid-cols-5 md:grid-cols-3 grid-cols-1 gap-4 mb-8">
-      <li class="rounded-xl bg-white/5 ring-1 ring-white/10 p-4">
-        <p class="text-xs uppercase tracking-wider text-emerald-300 mb-1">Step 1</p>
-        <p class="font-semibold">Upload packs</p>
-      </li>
-      <li class="rounded-xl bg-white/5 ring-1 ring-white/10 p-4">
-        <p class="text-xs uppercase tracking-wider text-emerald-300 mb-1">Step 2</p>
-        <p class="font-semibold">Arrange base & layers</p>
-      </li>
-      <li class="rounded-xl bg-white/5 ring-1 ring-white/10 p-4">
-        <p class="text-xs uppercase tracking-wider text-emerald-300 mb-1">Step 3</p>
-        <p class="font-semibold">Choose per-file sources</p>
-      </li>
-      <li class="rounded-xl bg-white/5 ring-1 ring-white/10 p-4">
-        <p class="text-xs uppercase tracking-wider text-emerald-300 mb-1">Step 4</p>
-        <p class="font-semibold">Edit name, icon, description</p>
-      </li>
-      <li class="rounded-xl bg-white/5 ring-1 ring-white/10 p-4">
-        <p class="text-xs uppercase tracking-wider text-emerald-300 mb-1">Step 5</p>
-        <p class="font-semibold">Merge & download</p>
-      </li>
-    </ol>
-
-    <!-- Upload + Layers + Editor -->
-    <section class="grid lg:grid-cols-12 gap-6">
-      <!-- Left: Upload + Layers -->
-      <div class="lg:col-span-4 space-y-6">
-        <!-- Upload -->
-        <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5">
-          <h2 class="text-lg font-semibold mb-3">Upload Resource Packs (.zip)</h2>
-          <p class="text-sm text-white/70 mb-4">The first uploaded pack becomes the Base. You can reorder to set Base and Layer 1, 2, etc.</p>
-
-          <div id="dropZone" class="group relative rounded-xl border border-dashed border-white/20 bg-white/5 p-5 text-center hover:border-emerald-300/40 transition">
-            <input id="fileInput" class="hidden-input" type="file" accept=".zip" multiple />
-            <div class="flex flex-col items-center gap-2">
-              <div class="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-300 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" class="w-7 h-7" fill="currentColor" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16"></path></svg>
-              </div>
-              <div class="flex gap-2 flex-wrap justify-center">
-                <button id="browseBtn" class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 px-4 py-2 font-semibold transition">Browse .zip files</button>
-              </div>
-              <p class="text-xs text-white/60">or drag & drop here</p>
-            </div>
+        <div>
+          <label>Quick actions</label>
+          <div class="row">
+            <button id="clearPacks" class="btn-secondary">Clear all</button>
+            <button id="setFirstAsBase" class="btn-secondary">Set first as Base</button>
           </div>
-
-          <div id="uploadNotice" class="hidden mt-3 text-sm text-rose-300"></div>
-        </div>
-
-        <!-- Layers -->
-        <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold">Base & Layers</h2>
-            <button id="clearAllBtn" class="text-sm text-rose-300 hover:text-rose-200 underline underline-offset-2">Clear all</button>
-          </div>
-
-          <div id="layersList" class="space-y-3">
-            <!-- Packs will appear here -->
-          </div>
-
-          <p class="mt-3 text-xs text-white/60">Tip: Higher layers override lower ones by default. You can also pick exact sources per file.</p>
         </div>
       </div>
 
-      <!-- Right: File chooser + Editor -->
-      <div class="lg:col-span-8 space-y-6">
-        <!-- File chooser -->
-        <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
-            <h2 class="text-lg font-semibold">Choose Sources Per File</h2>
-            <div class="flex items-center gap-2">
-              <input id="searchInput" type="text" placeholder="Search file path..." class="w-56 px-3 py-2 rounded-lg bg-white/10 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/60" />
-              <button id="resetByOrderBtn" class="rounded-lg bg-slate-700/60 hover:bg-slate-700 px-3 py-2 text-sm">Auto-pick by order</button>
-            </div>
-          </div>
+      <div class="divider"></div>
 
-          <div class="file-table-wrap">
-            <div class="file-table-scroll" id="fileTableScroll">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr id="fileTableHeadRow" class="text-left text-white/70 border-b border-white/10">
-                    <!-- Headers injected -->
-                  </tr>
-                </thead>
-                <tbody id="fileTableBody">
-                  <tr><td class="py-6 text-white/60">Upload packs to see files here.</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div id="fileTableFooter" class="mt-3 flex items-center justify-between hidden">
-            <p id="fileCountText" class="text-xs text-white/60"></p>
-            <div class="flex items-center gap-2">
-              <button id="loadMoreBtn" class="hidden rounded-lg bg-slate-700/60 hover:bg-slate-700 px-3 py-1.5 text-xs">Load more</button>
-              <button id="backToTopBtn" class="rounded-lg bg-slate-700/60 hover:bg-slate-700 px-3 py-1.5 text-xs">Back to top</button>
-            </div>
-          </div>
+      <div>
+        <label>Modrinth search</label>
+        <div class="modrinth-bar">
+          <input id="modrinthQuery" type="text" placeholder="Search Modrinth resource packs..." />
+          <button id="modrinthSearch">Search</button>
         </div>
-
-        <!-- Editor -->
-        <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5" id="editor">
-          <h2 class="text-lg font-semibold mb-3">Merged Pack Editor</h2>
-          <form id="editorForm" class="grid md:grid-cols-2 gap-5" autocomplete="off">
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm mb-1">Pack Name</label>
-                <input id="packName" type="text" class="w-full px-3 py-2 rounded-lg bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60" placeholder="Merged Pack" />
-                <p class="text-xs text-white/60 mt-1">Used as the download filename.</p>
-              </div>
-              <div>
-                <label class="block text-sm mb-1">Description</label>
-                <textarea id="packDesc" rows="3" class="w-full px-3 py-2 rounded-lg bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60" placeholder="merged by og krish's webisite"></textarea>
-                <p class="text-xs text-white/60 mt-1">This goes inside pack.mcmeta.</p>
-              </div>
-              <div>
-                <label class="block text-sm mb-1">Pack Format</label>
-                <select id="packFormat" class="w-full px-3 py-2 rounded-lg bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400/60">
-                  <option value="15" selected>15 (Minecraft 1.21+)</option>
-                  <option value="13">13 (Minecraft 1.20.x)</option>
-                  <option value="12">12 (Minecraft 1.19.3–1.19.4)</option>
-                  <option value="9">9 (Minecraft 1.19–1.19.2)</option>
-                  <option value="8">8 (Minecraft 1.18.x)</option>
-                  <option value="7">7 (Minecraft 1.17.x)</option>
-                  <option value="6">6 (Minecraft 1.16.2–1.16.5)</option>
-                </select>
-                <p class="text-xs text-white/60 mt-1">If unsure, leave as is.</p>
-              </div>
-            </div>
-
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm mb-1">Pack Icon (pack.png)</label>
-                <div class="flex items-center gap-4">
-                  <div id="iconPreview" class="h-20 w-20 rounded-lg ring-1 ring-white/10 bg-white/10 flex items-center justify-center text-white/60">
-                    <!-- Placeholder SVG -->
-                    <svg viewBox="0 0 24 24" class="w-8 h-8" fill="currentColor" aria-hidden="true">
-                      <path d="M12 3l9 4.5v9L12 21 3 16.5v-9L12 3zm0 2.236L5 8.118v7.764L12 18.764l7-2.882V8.118L12 5.236z"></path>
-                    </svg>
-                  </div>
-                  <div class="flex-1">
-                    <div class="flex gap-2">
-                      <input id="iconFileInput" type="file" accept="image/png" class="hidden-input" />
-                      <button id="iconUploadBtn" type="button" class="rounded-lg bg-slate-700/60 hover:bg-slate-700 px-3 py-2 text-sm">Upload PNG</button>
-                      <select id="iconSourceSelect" class="rounded-lg bg-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400/60">
-                        <option value="custom" selected>Use uploaded icon</option>
-                        <option value="none">No icon</option>
-                      </select>
-                    </div>
-                    <p class="text-xs text-white/60 mt-1">Or pick icon from a pack below if available.</p>
-                  </div>
-                </div>
-                <div class="mt-2" id="iconPackRow" class="hidden"></div>
-              </div>
-              <div class="rounded-lg bg-emerald-500/10 text-emerald-200 p-3 text-sm">
-                Default description set to: “merged by og krish's webisite”. You can edit it anytime.
-              </div>
-            </div>
-          </form>
-        </div>
-
-        <!-- Merge -->
-        <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5" id="merge">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
-            <h2 class="text-lg font-semibold">Merge & Download</h2>
-            <div class="flex items-center gap-2">
-              <button id="mergeBtn" class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed" disabled>
-                <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" aria-hidden="true"><path d="M12 4v7H5v2h7v7h2v-7h7v-2h-7V4z"/></svg>
-                Merge
-              </button>
-              <a id="downloadBtn" class="inline-flex items-center gap-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-indigo-950 px-4 py-2 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed pointer-events-none" download>
-                <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" aria-hidden="true"><path d="M12 3v12l4-4h-3V3h-2v8H8l4 4zM5 19h14v2H5z"/></svg>
-                Download
-              </a>
-            </div>
-          </div>
-
-          <div id="progressWrap" class="hidden">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-sm text-white/80">Merging...</span>
-              <span id="progressText" class="text-sm text-white/60">0%</span>
-            </div>
-            <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-              <div id="progressBar" class="h-3 bg-emerald-400 rounded-full transition-all" style="width:0%"></div>
-            </div>
-            <p id="progressDetail" class="mt-2 text-xs text-white/60"></p>
-          </div>
-
-          <div id="mergeNote" class="text-xs text-white/60 mt-3">
-            After merging, your download will be ready instantly. Everything happens on your device.
-          </div>
-        </div>
+        <div class="hint">Pick resource packs directly from Modrinth and add them to merge queue.</div>
+        <div id="modrinthResults" class="filemap" style="margin-top:8px;"></div>
       </div>
+
+      <div class="divider"></div>
+
+      <h2>Order & roles</h2>
+      <div class="hint">Drag using arrows, designate one Base, then Layer 1, Layer 2, etc. Higher layers override lower layers unless overridden per‑file below.</div>
+      <div id="packList" class="packs"></div>
     </section>
 
-    <!-- Toast -->
-    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 hidden">
-      <div class="rounded-lg bg-black/70 text-white px-4 py-2 text-sm ring-1 ring-white/10 shadow-lg"></div>
-    </div>
+    <!-- Right: Merge rules & Output -->
+    <section class="card">
+      <h2>Merge rules & output</h2>
+      <div class="grid2">
+        <div>
+          <label>Merged pack name</label>
+          <input id="mergedName" type="text" value="Merged Pack by OG Krish" />
+        </div>
+        <div>
+          <label>Pack format (Java)</label>
+          <input id="packFormat" type="number" min="1" step="1" value="18" />
+          <div class="hint small">Use a valid pack_format for target version (e.g., 15 for 1.20.1, 18 for 1.20.2+).</div>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:8px;">
+        <div>
+          <label>Pack icon (pack.png)</label>
+          <input id="iconInput" type="file" accept="image/png" />
+          <div class="hint small">If not set, a default icon will be generated.</div>
+        </div>
+        <div>
+          <label>Description</label>
+          <input id="descInput" type="text" value="merged by og krish's website" />
+        </div>
+      </div>
 
-    <!-- Footer -->
-    <footer class="mt-12 text-center text-xs text-white/50">
-      Built by OG_KRISH. This  works fully in your browser. No files are uploaded anywhere.
-    </footer>
+      <div class="divider"></div>
+
+      <h2>Choose file sources</h2>
+      <div class="hint">For each file in assets/ and top‑level pack.png or pack.mcmeta, choose which pack wins.</div>
+      <div id="fileMap" class="filemap"></div>
+
+      <div class="divider"></div>
+
+      <div class="row">
+        <button id="buildMap" class="btn-secondary">Scan & build file map</button>
+        <button id="mergeBtn">Merge</button>
+        <button id="downloadBtn" disabled>Download merged ZIP</button>
+      </div>
+      <div style="margin-top:10px">
+        <div class="progress-wrap"><div id="progress" class="progress"></div></div>
+        <div id="status" class="hint" style="margin-top:6px">Idle</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer">
+    Notes: A valid resource pack contains assets/, pack.mcmeta (with pack_format), and optionally pack.png as an icon. This tool preserves structure and lets higher layers override lower ones unless a specific source is chosen per file. Merging is done client‑side for privacy. 
   </div>
 
-  <script>
-    // ------- State -------
-    const state = {
-      packs: [], // [{id, name, file, zip, files: Set(paths), hasIcon, iconPath, iconData?, orderIndex}]
-      selection: new Map(), // path -> packId
-      allPaths: [], // union of file paths (excl. pack.mcmeta, pack.png)
-      filteredPaths: [],
-      renderLimit: 200,
-      userIcon: null, // {dataUrl, bytes}
-      iconSource: 'custom', // 'custom' | 'none' | packId
-      outZipBlobUrl: null,
-      // Modrinth state
-      modrinthCurrentPage: 0,
-      modrinthTotalResults: 0,
-      modrinthSelectedPacks: new Set(),
-      modrinthPacksCache: new Map(),
+<script>
+/*
+  OG Krish Resource Pack Combiner
+  — Client-side merging of Minecraft resource packs with per-file source selection.
+  — Uses JSZip to read/write ZIPs in the browser.
+  — Includes Modrinth search and direct add to queue.
+*/
+
+// Data structures
+const state = {
+  // Array of { id, name, size, zip: JSZip, files: Map<path, JSZipObject>, role: 'Base'|'Layer', layerIndex: number, source: 'upload'|'modrinth', slug? }
+  packs: [],
+  // fileMap: key = normalized path, value = { candidates: [{packId, path, size}], chosenPackId }
+  fileMap: new Map(),
+  // merged zip
+  mergedZip: null,
+};
+
+// Utilities
+const $ = (id) => document.getElementById(id);
+const fmtSize = (n) => {
+  if (n < 1024) return n + ' B';
+  if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+  return (n/1024/1024).toFixed(2) + ' MB';
+};
+const setStatus = (msg) => { $('status').textContent = msg; };
+const setProgress = (pct) => { $('progress').style.width = Math.max(0, Math.min(100, pct)) + '%'; };
+
+// Validate resource pack structure quick check
+function isLikelyResourcePack(entries) {
+  // Heuristic: has at least one of 'assets/' folder or 'pack.mcmeta'
+  return entries.some(p => p === 'pack.mcmeta' || p.startsWith('assets/'));
+}
+
+// Read uploaded zips
+$('fileInput').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+
+  setStatus('Loading ZIPs...');
+  for (const file of files) {
+    try {
+      const buf = await file.arrayBuffer();
+      const zip = await JSZip.loadAsync(buf);
+      const entries = Object.keys(zip.files).map(k => k.replace(/^./?/,''));
+      if (!isLikelyResourcePack(entries)) {
+        console.warn('Skipped non-resource pack:', file.name);
+        continue;
+      }
+      const id = crypto.randomUUID();
+      const pack = {
+        id,
+        name: file.name.replace(/.zip$/i, ''),
+        size: file.size,
+        zip,
+        files: new Map(Object.entries(zip.files)),
+        role: state.packs.length === 0 ? 'Base' : 'Layer',
+        layerIndex: state.packs.length === 0 ? 0 : state.packs.filter(p => p.role === 'Layer').length + 1,
+        source: 'upload'
+      };
+      state.packs.push(pack);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to read ZIP: ' + file.name);
+    }
+  }
+  renderPackList();
+  setStatus('Loaded ' + state.packs.length + ' pack(s).');
+  e.target.value = '';
+});
+
+// Pack list rendering
+function renderPackList() {
+  const list = $('packList');
+  list.innerHTML = '';
+  // Recalculate layer indices
+  let layerCounter = 1;
+  let baseSeen = false;
+  for (const p of state.packs) {
+    if (p.role === 'Base' && !baseSeen) { p.layerIndex = 0; baseSeen = true; }
+  }
+  for (const p of state.packs) {
+    if (p.role === 'Layer') { p.layerIndex = layerCounter++; }
+  }
+
+  state.packs.forEach((p, idx) => {
+    const row = document.createElement('div');
+    row.className = 'pack';
+
+    // Drag controls
+    const drag = document.createElement('div');
+    drag.className = 'drag';
+    const up = document.createElement('button');
+    up.className = 'btn-secondary'; up.textContent = '↑'; up.style.padding = '6px 8px';
+    up.onclick = () => { if (idx > 0) { const t = state.packs[idx]; state.packs[idx] = state.packs[idx-1]; state.packs[idx-1] = t; renderPackList(); } };
+    const down = document.createElement('button');
+    down.className = 'btn-secondary'; down.textContent = '↓'; down.style.padding = '6px 8px';
+    down.onclick = () => { if (idx < state.packs.length - 1) { const t = state.packs[idx]; state.packs[idx] = state.packs[idx+1]; state.packs[idx+1] = t; renderPackList(); } };
+    drag.appendChild(up); drag.appendChild(down);
+
+    // Meta
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = p.name + (p.source === 'modrinth' ? '  • Modrinth' : '');
+    const size = document.createElement('div');
+    size.className = 'size';
+    size.textContent = fmtSize(p.size || 0);
+    meta.appendChild(name); meta.appendChild(size);
+
+    // Role selector
+    const roleSel = document.createElement('select');
+    roleSel.className = 'role';
+    const optBase = document.createElement('option'); optBase.value = 'Base'; optBase.textContent = 'Base';
+    const optLayer = document.createElement('option'); optLayer.value = 'Layer'; optLayer.textContent = 'Layer';
+    roleSel.appendChild(optBase); roleSel.appendChild(optLayer);
+    roleSel.value = p.role;
+    roleSel.onchange = () => {
+      // Ensure exactly one Base
+      if (roleSel.value === 'Base') {
+        state.packs.forEach(x => { x.role = x.id === p.id ? 'Base' : 'Layer'; });
+      } else {
+        // If none base remains, force first as Base
+        p.role = 'Layer';
+        if (!state.packs.some(x => x.role === 'Base')) {
+          state.packs[0].role = 'Base';
+        }
+      }
+      renderPackList();
     };
 
-    // ------- Elements -------
-    const fileInput = document.getElementById('fileInput');
-    const browseBtn = document.getElementById('browseBtn');
-    const modrinthBtn = document.getElementById('modrinthBtn'); // Now only in header
-    const dropZone = document.getElementById('dropZone');
-    const uploadNotice = document.getElementById('uploadNotice');
+    // Layer badge
+    const badge = document.createElement('span');
+    badge.className = 'pill';
+    badge.textContent = p.role === 'Base' ? 'Base' : ('Layer ' + p.layerIndex);
 
-    const layersList = document.getElementById('layersList');
-    const clearAllBtn = document.getElementById('clearAllBtn');
+    // Remove
+    const remove = document.createElement('button');
+    remove.className = 'btn-secondary';
+    remove.textContent = 'Remove';
+    remove.onclick = () => {
+      state.packs = state.packs.filter(x => x.id !== p.id);
+      renderPackList();
+    };
 
-    const searchInput = document.getElementById('searchInput');
-    const fileTableHeadRow = document.getElementById('fileTableHeadRow');
-    const fileTableBody = document.getElementById('fileTableBody');
-    const fileTableFooter = document.getElementById('fileTableFooter');
-    const fileCountText = document.getElementById('fileCountText');
-    const loadMoreBtn = document.getElementById('loadMoreBtn');
-    const backToTopBtn = document.getElementById('backToTopBtn');
-    const fileTableScroll = document.getElementById('fileTableScroll');
+    row.appendChild(drag);
+    row.appendChild(meta);
+    row.appendChild(roleSel);
+    row.appendChild(badge);
+    row.appendChild(remove);
+    list.appendChild(row);
+  });
+}
 
-    const packName = document.getElementById('packName');
-    const packDesc = document.getElementById('packDesc');
-    const packFormat = document.getElementById('packFormat');
-    const editorForm = document.getElementById('editorForm');
+// Clear all
+$('clearPacks').addEventListener('click', () => {
+  state.packs = [];
+  state.fileMap.clear();
+  $('fileMap').innerHTML = '';
+  renderPackList();
+  setStatus('Cleared all packs.');
+  setProgress(0);
+  $('downloadBtn').disabled = true;
+});
 
-    const iconPreview = document.getElementById('iconPreview');
-    const iconUploadBtn = document.getElementById('iconUploadBtn');
-    const iconFileInput = document.getElementById('iconFileInput');
-    const iconSourceSelect = document.getElementById('iconSourceSelect');
-    const iconPackRow = document.getElementById('iconPackRow');
+// Set first as Base
+$('setFirstAsBase').addEventListener('click', () => {
+  if (!state.packs.length) return;
+  state.packs.forEach((p, i) => p.role = i === 0 ? 'Base' : 'Layer');
+  renderPackList();
+});
 
-    const mergeBtn = document.getElementById('mergeBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const progressWrap = document.getElementById('progressWrap');
+// Build file map
+$('buildMap').addEventListener('click', async () => {
+  if (!state.packs.length) { alert('Add at least one resource pack first.'); return; }
+  setStatus('Scanning packs and building file map...');
+  setProgress(5);
 
-    // Modrinth Modal Elements
-    const modrinthModal = document.getElementById('modrinthModal');
-    const closeModrinthModal = document.getElementById('closeModrinthModal');
-    const cancelModrinthModal = document.getElementById('cancelModrinthModal');
-    const modrinthSearch = document.getElementById('modrinthSearch');
-    const modrinthSearchBtn = document.getElementById('modrinthSearchBtn');
-    const modrinthSort = document.getElementById('modrinthSort');
-    const modrinthGameVersion = document.getElementById('modrinthGameVersion');
-    const modrinthLoading = document.getElementById('modrinthLoading');
-    const modrinthResults = document.getElementById('modrinthResults');
-    const modrinthPagination = document.getElementById('modrinthPagination');
-    const prevPage = document.getElementById('prevPage');
-    const nextPage = document.getElementById('nextPage');
-    const pageInfo = document.getElementById('pageInfo');
-    const selectedCount = document.getElementById('selectedCount');
-    const clearSelections = document.getElementById('clearSelections');
-    const addSelectedPacks = document.getElementById('addSelectedPacks');
-    const progressBar = document.getElementById('progressBar');
-    const progressText = document.getElementById('progressText');
-    const progressDetail = document.getElementById('progressDetail');
+  const fileMap = new Map(); // path -> { candidates: [{packId, path, size}], chosenPackId }
+  // Traverse in display order (top to bottom)
+  for (const p of state.packs) {
+    for (const [path, obj] of p.files) {
+      const npath = path.replace(/^./?/,'');
+      if (obj.dir) continue;
+      // Only include pack files we care about: pack.png, pack.mcmeta, assets/**
+      if (!(npath === 'pack.png' || npath === 'pack.mcmeta' || npath.startsWith('assets/'))) continue;
+      if (!fileMap.has(npath)) fileMap.set(npath, { candidates: [], chosenPackId: null });
+      fileMap.get(npath).candidates.push({ packId: p.id, path: npath, size: obj._data ? obj._data.uncompressedSize : (obj._dataInitial ? obj._dataInitial.length : 0) });
+    }
+  }
 
-    const resetByOrderBtn = document.getElementById('resetByOrderBtn');
+  // Default choice: highest layer wins unless base explicitly chosen, but user can override
+  // We’ll compute a precedence index: Base = 0, Layer numbers ascending; highest index wins
+  const precedence = new Map();
+  for (const p of state.packs) precedence.set(p.id, p.role === 'Base' ? 0 : p.layerIndex);
 
-    const toast = document.getElementById('toast');
-    const toastBox = toast.querySelector('div');
+  for (const [npath, rec] of fileMap.entries()) {
+    let best = rec.candidates[0];
+    for (const c of rec.candidates) {
+      if (precedence.get(c.packId) > precedence.get(best.packId)) best = c;
+    }
+    rec.chosenPackId = best.packId;
+  }
 
-    // ------- Helpers -------
-    function showToast(msg, color='white') {
-      toastBox.textContent = msg;
-      toastBox.style.color = color;
-      toast.classList.remove('hidden');
-      setTimeout(() => toast.classList.add('hidden'), 2400);
+  state.fileMap = fileMap;
+  renderFileMap();
+  setProgress(15);
+  setStatus('File map ready. Review and adjust sources if needed.');
+});
+
+// Render file map UI
+function renderFileMap() {
+  const container = $('fileMap');
+  container.innerHTML = '';
+  // Sort keys for stable UI: pack.mcmeta, pack.png, then assets
+  const keys = Array.from(state.fileMap.keys()).sort((a, b) => {
+    const rank = p => p === 'pack.mcmeta' ? 0 : p === 'pack.png' ? 1 : 2;
+    const r = rank(a) - rank(b);
+    return r !== 0 ? r : a.localeCompare(b);
+  });
+
+  for (const k of keys) {
+    const rec = state.fileMap.get(k);
+    const row = document.createElement('div');
+    row.className = 'file-row';
+
+    const left = document.createElement('div');
+    left.textContent = k;
+
+    const right = document.createElement('div');
+    const sel = document.createElement('select');
+    // Option: “Auto (by order)”
+    const autoOpt = document.createElement('option');
+    autoOpt.value = 'AUTO';
+    autoOpt.textContent = 'Auto (by order)';
+    sel.appendChild(autoOpt);
+
+    // Options per candidate
+    for (const c of rec.candidates) {
+      const pack = state.packs.find(p => p.id === c.packId);
+      const opt = document.createElement('option');
+      opt.value = c.packId;
+      opt.textContent = `${pack ? pack.name : 'Unknown'} — ${fmtSize(c.size || 0)}`;
+      sel.appendChild(opt);
     }
 
-    function sanitizeFileName(name) {
-      return name.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'Merged_Pack';
-    }
+    // Set selection: specific chosen or AUTO if matches precedence-best
+    sel.value = rec.chosenPackId || 'AUTO';
+    sel.onchange = () => {
+      rec.chosenPackId = sel.value === 'AUTO' ? null : sel.value;
+    };
 
-    function isSpecialPath(p) {
-      const lower = p.toLowerCase();
-      return lower === 'pack.mcmeta' || lower === 'pack.png';
-    }
+    right.appendChild(sel);
+    row.appendChild(left);
+    row.appendChild(right);
+    container.appendChild(row);
+  }
+}
 
-    function unionAllPaths() {
-      const all = new Set();
-      state.packs.forEach(p => {
-        p.files.forEach(fp => { if (!isSpecialPath(fp)) all.add(fp); });
-      });
-      const arr = Array.from(all).sort((a,b)=> a.localeCompare(b));
-      state.allPaths = arr;
-      applySearchFilter();
-    }
+// Modrinth integration
+const MODRINTH_API = 'https://api.modrinth.com/v2'; // public API v2
+// Search resource packs by query, filter project_type=resourcepack
+$('modrinthSearch').addEventListener('click', async () => {
+  const q = $('modrinthQuery').value.trim();
+  if (!q) return;
+  setStatus('Searching Modrinth...');
+  const resultsEl = $('modrinthResults');
+  resultsEl.innerHTML = 'Searching...';
 
-    function applySearchFilter() {
-      const q = (searchInput.value || '').toLowerCase().trim();
-      if (!q) {
-        state.filteredPaths = state.allPaths.slice(0, state.renderLimit);
-      } else {
-        const filtered = state.allPaths.filter(p => p.toLowerCase().includes(q));
-        state.filteredPaths = filtered.slice(0, state.renderLimit);
+  try {
+    // v2 search endpoint with facets to ensure project_type:resourcepack
+    const url = `${MODRINTH_API}/search?query=${encodeURIComponent(q)}&facets=${encodeURIComponent('[["project_type:resourcepack"]]')}`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'OG-Krish-RP-Combiner/1.0' } });
+    if (!res.ok) throw new Error('Modrinth search failed');
+    const data = await res.json();
+
+    resultsEl.innerHTML = '';
+    (data.hits || []).slice(0, 12).forEach(hit => {
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      const left = document.createElement('div');
+      left.innerHTML = `${hit.title} <span class="badge">${hit.slug}</span>`;
+      const right = document.createElement('div');
+      const addBtn = document.createElement('button');
+      addBtn.textContent = 'Add latest file';
+      addBtn.onclick = () => addModrinthProject(hit.project_id || hit.projectId || hit.slug, hit.title);
+      right.appendChild(addBtn);
+      row.appendChild(left); row.appendChild(right);
+      resultsEl.appendChild(row);
+    });
+    if (!resultsEl.innerHTML) resultsEl.textContent = 'No results.';
+    setStatus('Modrinth search complete.');
+  } catch (err) {
+    console.error(err);
+    resultsEl.innerHTML = '<span class="danger pill">Error searching Modrinth</span>';
+    setStatus('Modrinth search error.');
+  }
+});
+
+// Add Modrinth project’s latest compatible resource pack file
+async function addModrinthProject(idOrSlug, titleFallback) {
+  try {
+    setStatus('Fetching Modrinth project versions...');
+    // Get versions; pick first file (latest entry)
+    const url = `${MODRINTH_API}/project/${encodeURIComponent(idOrSlug)}/version`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'OG-Krish-RP-Combiner/1.0' } });
+    if (!res.ok) throw new Error('Failed to fetch project versions');
+    const versions = await res.json();
+    if (!versions.length) throw new Error('No versions found');
+
+    // Choose latest version with a .zip file
+    let chosenFile = null;
+    let chosenVersion = null;
+    for (const v of versions) {
+      const fzip = (v.files || []).find(f => (f.filename || '').toLowerCase().endsWith('.zip'));
+      if (fzip) { chosenFile = fzip; chosenVersion = v; break; }
+    }
+    if (!chosenFile) throw new Error('No ZIP file found in latest versions');
+
+    setStatus('Downloading pack from Modrinth...');
+    const fileRes = await fetch(chosenFile.url, { headers: { 'User-Agent': 'OG-Krish-RP-Combiner/1.0' } });
+    if (!fileRes.ok) throw new Error('Download failed');
+    const buf = await fileRes.arrayBuffer();
+
+    const zip = await JSZip.loadAsync(buf);
+    const entries = Object.keys(zip.files).map(k => k.replace(/^./?/,''));
+    if (!isLikelyResourcePack(entries)) {
+      alert('Downloaded file is not a valid resource pack.');
+      return;
+    }
+    const id = crypto.randomUUID();
+    const name = (titleFallback || idOrSlug) + ' (Modrinth)';
+    const pack = {
+      id,
+      name,
+      size: buf.byteLength,
+      zip,
+      files: new Map(Object.entries(zip.files)),
+      role: state.packs.length === 0 ? 'Base' : 'Layer',
+      layerIndex: state.packs.length === 0 ? 0 : state.packs.filter(p => p.role === 'Layer').length + 1,
+      source: 'modrinth',
+      slug: idOrSlug
+    };
+    state.packs.push(pack);
+    renderPackList();
+    setStatus('Added Modrinth pack: ' + name);
+  } catch (err) {
+    console.error(err);
+    alert('Modrinth add failed: ' + err.message);
+    setStatus('Modrinth add error.');
+  }
+}
+
+// Merge process
+$('mergeBtn').addEventListener('click', async () => {
+  if (!state.packs.length) { alert('Add packs first.'); return; }
+  if (state.packs.filter(p => p.role === 'Base').length !== 1) {
+    alert('Exactly one Base pack must be selected.');
+    return;
+  }
+  if (state.fileMap.size === 0) {
+    const confirmScan = confirm('No file map found. Build now?');
+    if (!confirmScan) return;
+    $('buildMap').click();
+    // Wait a tick
+    await new Promise(r => setTimeout(r, 200));
+    if (state.fileMap.size === 0) { alert('File map still empty.'); return; }
+  }
+
+  setStatus('Merging packs...');
+  setProgress(20);
+  const merged = new JSZip();
+
+  // Create assets folder lazily
+  const addFileFromPack = async (pack, path) => {
+    const obj = pack.files.get(path);
+    if (!obj) return;
+    const data = await obj.async('uint8array');
+    merged.file(path, data);
+  };
+
+  // Determine precedence function
+  const precedence = new Map();
+  for (const p of state.packs) precedence.set(p.id, p.role === 'Base' ? 0 : p.layerIndex);
+
+  // Apply fileMap choices
+  const entries = Array.from(state.fileMap.entries());
+  const total = entries.length;
+  let done = 0;
+
+  for (const [path, rec] of entries) {
+    let chosenId = rec.chosenPackId;
+    if (!chosenId) {
+      // Auto by precedence
+      let best = rec.candidates[0];
+      for (const c of rec.candidates) {
+        if (precedence.get(c.packId) > precedence.get(best.packId)) best = c;
       }
-      updateFileCountFooter();
-      renderFileTable();
+      chosenId = best.packId;
     }
-
-    function updateFileCountFooter() {
-      const q = (searchInput.value || '').toLowerCase().trim();
-      const total = state.allPaths.length;
-      const shownCount = state.filteredPaths.length;
-      fileTableFooter.classList.toggle('hidden', total === 0);
-      fileCountText.textContent = q
-        ? `Showing ${shownCount} of ${total} matching files`
-        : `Showing ${shownCount} of ${total} files`;
-      loadMoreBtn.classList.toggle('hidden', shownCount >= (q ? state.allPaths.filter(p => p.toLowerCase().includes(q)).length : total));
+    const pack = state.packs.find(p => p.id === chosenId);
+    if (pack) {
+      await addFileFromPack(pack, path);
     }
+    done++;
+    setProgress(20 + Math.floor(70 * (done / Math.max(1, total))));
+  }
 
-    function loadMoreRows() {
-      const q = (searchInput.value || '').toLowerCase().trim();
-      const baseArr = q ? state.allPaths.filter(p => p.toLowerCase().includes(q)) : state.allPaths;
-      const next = Math.min(baseArr.length, state.filteredPaths.length + state.renderLimit);
-      state.filteredPaths = baseArr.slice(0, next);
-      updateFileCountFooter();
-      renderFileTable();
-    }
+  // Ensure pack.mcmeta based on inputs
+  const desc = $('descInput').value || "merged by og krish's website";
+  const name = $('mergedName').value || "Merged Pack by OG Krish";
+  const packFormat = parseInt($('packFormat').value || '18', 10);
 
-    function getOrder() {
-      // state.packs is always stored in order: index 0 = Base, 1 = Layer 1, etc.
-      return state.packs.map(p => p.id);
-    }
-
-    function packById(id) {
-      return state.packs.find(p => p.id === id);
-    }
-
-    function defaultProviderForPath(path) {
-      // Highest layer that contains the file wins
-      for (let i = state.packs.length - 1; i >= 0; i--) {
-        if (state.packs[i].files.has(path)) return state.packs[i].id;
+  // If no pack.mcmeta selected, write one
+  if (!merged.file('pack.mcmeta')) {
+    const mcmeta = {
+      pack: {
+        pack_format: packFormat,
+        description: desc
       }
-      return null;
+    };
+    merged.file('pack.mcmeta', JSON.stringify(mcmeta, null, 2));
+  } else {
+    // Overwrite description/pack_format to ensure coherence
+    try {
+      const raw = await merged.file('pack.mcmeta').async('string');
+      const obj = JSON.parse(raw);
+      obj.pack = obj.pack || {};
+      obj.pack.pack_format = packFormat;
+      obj.pack.description = desc;
+      merged.file('pack.mcmeta', JSON.stringify(obj, null, 2));
+    } catch {
+      const mcmeta = { pack: { pack_format: packFormat, description: desc } };
+      merged.file('pack.mcmeta', JSON.stringify(mcmeta, null, 2));
     }
+  }
 
-    function ensureSelectionDefaults() {
-      // For any path not chosen, assign default by order
-      state.allPaths.forEach(path => {
-        if (!state.selection.has(path)) {
-          const provider = defaultProviderForPath(path);
-          if (provider) state.selection.set(path, provider);
-        }
-      });
-    }
+  // Pack icon: uploaded or fallback
+  const iconInput = $('iconInput');
+  if (iconInput.files && iconInput.files[0]) {
+    const buf = new Uint8Array(await iconInput.files[0].arrayBuffer());
+    merged.file('pack.png', buf);
+  } else if (!merged.file('pack.png')) {
+    // Generate a small green placeholder PNG (1x1) as a minimal valid icon
+    // Here we embed a 1x1 green PNG base64
+    const b64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+    merged.file('pack.png', b64ToUint8Array(b64));
+  }
 
-    function resetSelectionByOrder() {
-      state.selection.clear();
-      ensureSelectionDefaults();
-      renderFileTable(); // Updates radios
-      showToast('Auto-picked sources by layer order', '#A7F3D0');
-    }
+  state.mergedZip = merged;
 
-    function updateHeadRow() {
-      fileTableHeadRow.innerHTML = '';
-      // First sticky column for Path
-      const thPath = document.createElement('th');
-      thPath.className = 'sticky-col left-0 py-3 px-3';
-      thPath.textContent = 'Path';
-      fileTableHeadRow.appendChild(thPath);
-      // Create a header per pack
-      state.packs.forEach((p, idx) => {
-        const th = document.createElement('th');
-        th.className = 'py-3 px-3 text-center whitespace-nowrap';
-        th.innerHTML = `<div class="inline-flex items-center gap-2">
-          <span class="inline-flex items-center justify-center h-6 w-6 rounded-full text-xs font-bold ${idx===0?'bg-emerald-500 text-emerald-950':'bg-white/10 text-white/80'}">${idx===0?'Base':idx}</span>
-          <span class="opacity-90">${escapeHtml(p.name)}</span>
-        </div>`;
-        fileTableHeadRow.appendChild(th);
-      });
-    }
+  // Export
+  setStatus('Finalizing ZIP...');
+  const blob = await merged.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+  // Enable download button with cached blob
+  $('downloadBtn').disabled = false;
+  $('downloadBtn').onclick = () => {
+    const safe = name.replace(/[^w-.()[]s]/g, '_');
+    saveAs(blob, `${safe || 'Merged_Pack'}.zip`);
+  };
 
-    function renderFileTable() {
-      // Head
-      updateHeadRow();
-      // Body
-      fileTableBody.innerHTML = '';
-      if (state.filteredPaths.length === 0) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="py-6 text-white/60">No files to display.</td>`;
-        fileTableBody.appendChild(tr);
-        return;
-      }
-      const orderIds = getOrder();
+  setProgress(100);
+  setStatus('Merge complete. Click Download merged ZIP.');
+});
 
-      state.filteredPaths.forEach((path, rowIdx) => {
-        const tr = document.createElement('tr');
-        tr.className = rowIdx % 2 ? 'bg-white/5' : '';
-        // Path cell
-        const tdPath = document.createElement('td');
-        tdPath.className = 'sticky-col left-0 py-2 px-3 max-w-[40ch] truncate';
-        tdPath.title = path;
-        tdPath.textContent = path;
-        tr.appendChild(tdPath);
-        // Pack options
-        orderIds.forEach((pid) => {
-          const pack = packById(pid);
-          const td = document.createElement('td');
-          td.className = 'py-2 px-3 text-center';
-          if (pack.files.has(path)) {
-            const selected = (state.selection.get(path) === pid) ||
-              (!state.selection.has(path) && defaultProviderForPath(path) === pid);
-            td.innerHTML = `
-              <label class="inline-flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="src-${cssHash(path)}" value="${pid}" ${selected?'checked':''} class="h-4 w-4 accent-emerald-400" />
-                <span class="text-xs text-white/70">Use</span>
-              </label>
-            `;
-            const input = td.querySelector('input');
-            input.addEventListener('change', () => {
-              state.selection.set(path, pid);
-            });
-          } else {
-            td.innerHTML = `<span class="text-xs text-white/30">—</span>`;
-          }
-          tr.appendChild(td);
-        });
-        fileTableBody.appendChild(tr);
-      });
-    }
+// Helper: base64 to Uint8Array
+function b64ToUint8Array(b64) {
+  const bin = atob(b64);
+  const len = bin.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
 
-    function renderLayers() {
-      layersList.innerHTML = '';
-      if (state.packs.length === 0) {
-        const empty = document
+// Initialize
+renderPackList();
+setStatus('Idle. Add packs to begin.');
+</script>
+</body>
+</html>
